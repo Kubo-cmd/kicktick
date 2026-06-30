@@ -1,0 +1,8 @@
+[toolchain]
+channel = "1.75.0"
+components = ["rustfmt", "clippy"]
+
+[workspace]
+members = [
+    "programs/*"
+]

@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --teal: #14B8A6;
+  --cyan: #06B6D4;
+  --navy: #0F1923;
+  --dark: #0A0F17;
+  --card: #1A2332;
+}
+
+body {
+  background: var(--dark);
+  color: white;
+}
+
+@layer utilities {
+  .glow-teal {
+    box-shadow: 0 0 20px rgba(20, 184, 166, 0.3), 0 0 60px rgba(20, 184, 166, 0.1);
+  }
+  .glow-cyan {
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.3), 0 0 60px rgba(6, 182, 212, 0.1);
+  }
+  .gradient-text {
+    background: linear-gradient(135deg, var(--teal), var(--cyan));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--teal), var(--cyan));
+    color: white;
+    font-weight: 600;
+    padding: 10px 24px;
+    border-radius: 8px;
+    transition: all 0.2s;
+  }
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(20, 184, 166, 0.4);
+  }
+  .btn-secondary {
+    background: transparent;
+    border: 1px solid rgba(20, 184, 166, 0.5);
+    color: var(--teal);
+    font-weight: 600;
+    padding: 10px 24px;
+    border-radius: 8px;
+    transition: all 0.2s;
+  }
+  .btn-secondary:hover {
+    background: rgba(20, 184, 166, 0.1);
+  }
+}
