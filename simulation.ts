@@ -4,7 +4,7 @@
  * Run: npx ts-node simulation.ts
  */
 
-import { SpikeDetector, shouldSettleYes } from '../kicktick/client/src/txodds-oracle';
+import { SpikeDetector, shouldSettleYes } from './kicktick/client/src/txodds-oracle';
 
 // ===== Simulation Helpers =====
 

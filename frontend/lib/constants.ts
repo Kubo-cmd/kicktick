@@ -1,5 +1,5 @@
 // lib/constants.ts
-// Program IDs and network config for KickTick + SPIKES
+// Program IDs and network config for KickTick
 
 export const CONFIG = {
   // Solana cluster
@@ -8,9 +8,6 @@ export const CONFIG = {
 
   // KickTick program (replace after deploy)
   kicktickProgramId: 'KTCKiCkTiCkTiCkTiCkTiCkTiCkTiCkTiCkTiCkTiCk',
-
-  // SPIKES program (replace after deploy)
-  spikesProgramId: 'SPiKeSPiKeSPiKeSPiKeSPiKeSPiKeSPiKeSPiKeSPiKeS',
 
   // TxODDS Oracle
   txodds: {

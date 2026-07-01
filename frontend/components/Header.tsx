@@ -11,8 +11,7 @@ export default function Header() {
             KT
           </div>
           <span className="font-bold text-lg">KickTick</span>
-          <span className="text-gray-500">+</span>
-          <span className="font-bold text-lg gradient-text">SPIKES</span>
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-teal/20 text-teal font-mono">SOLANA</span>
         </div>
         <div className="flex items-center gap-4">
           <a
@@ -22,10 +21,11 @@ export default function Header() {
             Markets
           </a>
           <a
-            href="#album"
+            href="https://github.com/Kubo-cmd/kicktick"
+            target="_blank"
             className="text-sm text-gray-400 hover:text-white transition"
           >
-            Album
+            GitHub
           </a>
           <WalletMultiButton
             style={{

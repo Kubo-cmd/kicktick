@@ -4,7 +4,6 @@ import { useState } from 'react';
 import Header from '@/components/Header';
 import MarketCard from '@/components/MarketCard';
 import CreateMarketModal from '@/components/CreateMarketModal';
-import SpikesAlbum from '@/components/SpikesAlbum';
 import LiveOddsFeed from '@/components/LiveOddsFeed';
 
 // Demo data - replace with real SDK calls
@@ -14,7 +13,7 @@ const DEMO_MARKETS = [
     fixtureId: 1001,
     match: 'Brazil vs Argentina',
     type: 'odds_spike',
-    description: 'Will odds spike >15% in next 60s?',
+    description: 'Will odds move >15% in next 60s?',
     endTime: Date.now() + 45000,
     totalYes: 2500,
     totalNo: 1800,
@@ -42,16 +41,20 @@ const DEMO_MARKETS = [
     totalNo: 1400,
     status: 'open',
   },
-];
-
-const DEMO_SPIKES = [
-  { id: '1', match: 'Brazil vs Argentina', type: 'odds_surge', magnitude: 22, timestamp: Date.now() - 300000, rarity: 'rare' },
-  { id: '2', match: 'France vs Germany', type: 'goal_scored', magnitude: 35, timestamp: Date.now() - 600000, rarity: 'legendary' },
-  { id: '3', match: 'Spain vs England', type: 'odds_crash', magnitude: 18, timestamp: Date.now() - 900000, rarity: 'common' },
+  {
+    id: '4',
+    fixtureId: 1004,
+    match: 'Italy vs Portugal',
+    type: 'match_result',
+    description: 'Italy wins (short format)?',
+    endTime: Date.now() + 90000,
+    totalYes: 4100,
+    totalNo: 1900,
+    status: 'open',
+  },
 ];
 
 export default function HomePage() {
-  const [activeTab, setActiveTab] = useState<'markets' | 'spikes'>('markets');
   const [showCreate, setShowCreate] = useState(false);
 
   return (
@@ -61,21 +64,19 @@ export default function HomePage() {
       {/* Hero */}
       <section className="px-6 py-12 max-w-6xl mx-auto text-center">
         <h1 className="text-4xl md:text-6xl font-bold mb-4">
-          <span className="gradient-text">KickTick</span> +{' '}
-          <span className="gradient-text">SPIKES</span>
+          <span className="gradient-text">KickTick</span>
         </h1>
         <p className="text-gray-400 text-lg max-w-2xl mx-auto mb-8">
-          Sub-minute prediction markets + collectible spike moments.
-          Powered by <span className="text-teal">TxODDS</span> live World Cup data on{' '}
-          <span className="text-cyan">Solana</span>.
+          Sub-minute micro prediction markets on Solana.<br />
+          Settle in <span className="text-teal">&lt;60s</span> using live TxODDS odds + on-chain Merkle proofs.
         </p>
         <div className="flex gap-4 justify-center">
           <button className="btn-primary" onClick={() => setShowCreate(true)}>
             Create Market
           </button>
-          <button className="btn-secondary">
-            View Album
-          </button>
+          <a href="#markets" className="btn-secondary">
+            Browse Markets
+          </a>
         </div>
       </section>
 
@@ -91,8 +92,8 @@ export default function HomePage() {
             <div className="text-xs text-gray-400">Total Volume</div>
           </div>
           <div>
-            <div className="text-2xl font-bold text-teal">1,847</div>
-            <div className="text-xs text-gray-400">Spikes Minted</div>
+            <div className="text-2xl font-bold text-teal">312</div>
+            <div className="text-xs text-gray-400">Markets Settled</div>
           </div>
           <div>
             <div className="text-2xl font-bold text-cyan">89</div>
@@ -101,45 +102,19 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Tab Navigation */}
-      <section className="px-6 max-w-6xl mx-auto mb-6">
-        <div className="flex gap-2">
-          <button
-            className={`px-6 py-2 rounded-lg font-semibold transition ${
-              activeTab === 'markets'
-                ? 'bg-teal/20 text-teal border border-teal/50'
-                : 'text-gray-400 hover:text-white'
-            }`}
-            onClick={() => setActiveTab('markets')}
-          >
-            KickTick Markets
-          </button>
-          <button
-            className={`px-6 py-2 rounded-lg font-semibold transition ${
-              activeTab === 'spikes'
-                ? 'bg-cyan/20 text-cyan border border-cyan/50'
-                : 'text-gray-400 hover:text-white'
-            }`}
-            onClick={() => setActiveTab('spikes')}
-          >
-            SPIKES Album
-          </button>
+      {/* Markets + Feed */}
+      <section id="markets" className="px-6 max-w-6xl mx-auto pb-16">
+        <div className="mb-4">
+          <h2 className="text-xl font-semibold">Live Markets</h2>
+          <p className="text-sm text-gray-400">Create, bet, and settle in seconds using real-time TxODDS data.</p>
         </div>
-      </section>
-
-      {/* Content */}
-      <section className="px-6 max-w-6xl mx-auto pb-16">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
-            {activeTab === 'markets' ? (
-              <div className="grid gap-4">
-                {DEMO_MARKETS.map((market) => (
-                  <MarketCard key={market.id} market={market} />
-                ))}
-              </div>
-            ) : (
-              <SpikesAlbum spikes={DEMO_SPIKES} />
-            )}
+            <div className="grid gap-4">
+              {DEMO_MARKETS.map((market) => (
+                <MarketCard key={market.id} market={market} />
+              ))}
+            </div>
           </div>
           <div>
             <LiveOddsFeed />

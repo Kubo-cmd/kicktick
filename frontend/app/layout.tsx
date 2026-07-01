@@ -3,8 +3,8 @@ import './globals.css';
 import { WalletContextProvider } from '@/lib/WalletContext';
 
 export const metadata: Metadata = {
-  title: 'KickTick + SPIKES | TxODDS World Cup Hackathon',
-  description: 'Sub-minute micro prediction markets + collectible spike moments powered by TxODDS on Solana',
+  title: 'KickTick | Sub-Minute Micro Prediction Markets on Solana',
+  description: 'Create and settle prediction markets in under 60 seconds using live TxODDS odds data + on-chain Merkle proof settlement.',
 };
 
 export default function RootLayout({

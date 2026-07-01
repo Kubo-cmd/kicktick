@@ -1,74 +1,61 @@
-# TxODDS World Cup Hackathon — KickTick + SPIKES
+# KickTick: Sub-Minute Micro Prediction Markets on Solana
 
-Two projects built for the [TxODDS World Cup Hackathon](https://superteam.fun/earn/hackathon/world-cup/) ($50k prize pool).
-
-## Projects
-
-### KickTick — Sub-Minute Micro Prediction Markets
-Create and settle prediction markets in under 60 seconds using live TxODDS odds data.
+Create and settle prediction markets in **under 60 seconds** using live TxODDS odds data + on-chain Merkle proof settlement.
 
 **Market types:**
 - `odds_spike` — Will odds move >X% in the next N seconds?
 - `next_goal` — Which team scores next?
-- `next_card` — Will there be a card in the next 5 minutes?
+- `next_card` — Card in next 5 minutes?
 - `over_under_corners` — Corners in next N minutes?
-- `match_result` — Who wins (short-format)
+- `match_result` — Short-format winner
 
-**Settlement:** Uses TxODDS stable price (de-margined odds) with Merkle proof validation against the on-chain `txoracle` program.
-
-### SPIKES — Digital Sticker Album of Dramatic Moments
-Compressed NFTs (via Metaplex Bubblegum) minted when odds explode. Collect, trade, and show off the most dramatic World Cup moments.
-
-**Moment types:**
-- `odds_surge` — Odds jumped >15%
-- `odds_crash` — Odds dropped >15%
-- `goal_scored` — Goal caused major shift
-- `comeback` — Team came back from behind
-- `upset` — Underdog won
+**Key Features**
+- TxODDS oracle integration (stable de-margined odds)
+- Merkle proof validation against `txoracle` program
+- Fast settlement on Solana
+- Sub-minute market lifecycles (15s – 5min)
+- PDA vaults + on-chain position tracking
 
 ## Architecture
 
 ```
 +------------------------------------------------------------------+
-|                     FRONTEND (Next.js)                            |
-|  +----------------+  +-----------------+  +------------------+   |
-|  |  KickTick UI   |  |  SPIKES Album   |  |    Dashboard     |   |
-|  +-------+--------+  +--------+--------+  +--------+---------+   |
-+----------+------------------+--------------------+----------------+
-           |                  |                    |
-           v                  v                    v
+|                     FRONTEND (Next.js)                           |
+|  +------------------+  +------------------+                      |
+|  |   KickTick UI    |  |   Live Odds Feed |                      |
+|  +--------+---------+  +--------+---------+                      |
++-----------+---------------------+--------------------------------+
+            |                     |
+            v                     v
 +------------------------------------------------------------------+
-|                      SDK LAYER (TypeScript)                       |
-|  +----------------+  +-----------------+  +------------------+   |
-|  |  Market Mgr    |  |  Spike Pipeline |  |   TxODDS Client  |   |
-|  +-------+--------+  +--------+--------+  +--------+---------+   |
-+----------+------------------+--------------------+----------------+
-           |                  |                    |
-           +------------------+--------------------+
-                              |
-                              v
+|                   SDK / CLIENT (TypeScript)                      |
+|  +------------------+  +------------------+                      |
+|  | KickTickManager  |  |  TxOddsClient    |                      |
+|  | (create/bet/settle) |  + Merkle proofs  |                     |
+|  +------------------+  +------------------+                      |
++-----------+---------------------+--------------------------------+
+            |                                              
+            v
 +------------------------------------------------------------------+
-|                    SOLANA PROGRAMS (Anchor)                       |
+|                    SOLANA (Anchor)                               |
 |                                                                  |
-|  +-------------------------+  +-------------------------------+  |
-|  |       KickTick          │  |           SPIKES              |  |
-|  |  - create market        |  |  - mint spike moment (cNFT)   |  |
-|  |  - place bet            |  |  - album tracking             |  |
-|  |  - settle (TxODDS data) |  |  - transfer / trade           |  |
-|  |  - claim winnings       |  |  - burn                       |  |
-|  |  - cancel / refund      |  |                               |  |
-|  +-------------------------+  +-------------------------------+  |
+|  kicktick program                                                |
+|  - create_market                                                 |
+|  - place_bet                                                     |
+|  - settle_market (TxODDS + proof)                                |
+|  - claim_winnings                                                |
+|  - cancel / refund                                               |
 |                                                                  |
-+----------------------------+-------------------------------------+
++------------------------------------------------------------------+
                              |
                              v
 +------------------------------------------------------------------+
-|                  TxODDS ORACLE (txoracle program)                 |
+|                  TxODDS ORACLE (txoracle program)                |
 |                                                                  |
-|   - Merkle roots published on-chain (5-min batches)              |
+|   - Merkle roots published on-chain                              |
 |   - Cryptographic proof validation for settlement                |
-|   - Live odds + scores streaming via SSE                         |
-|   - Free World Cup tier (service level 1)                        |
+|   - Live odds + scores via SSE                                   |
+|   - Free World Cup tier                                          |
 |                                                                  |
 +------------------------------------------------------------------+
 ```
@@ -76,76 +63,92 @@ Compressed NFTs (via Metaplex Bubblegum) minted when odds explode. Collect, trad
 ## Quick Start
 
 ```bash
-# 1. Clone and setup
-git clone <this-repo>
-cd txodds-hackathon
+# 1. Clone and setup (on kicktick-only branch)
+git clone https://github.com/Kubo-cmd/kicktick.git
+cd kicktick
+git checkout kicktick-only
 ./setup-local.sh
 
-# 2. Configure wallet
+# 2. Configure wallet (devnet)
 solana-keygen new --outfile ~/.config/solana/id.json
-solana airdrop 2   # devnet SOL for gas
+solana airdrop 2
 
-# 3. Deploy programs
+# 3. (Optional) Deploy program
 ./deploy.sh devnet
 
-# 4. Initialize TxODDS subscription (free World Cup tier)
-npx ts-node scripts/init-txodds.ts
-
-# 5. Start spike detection pipeline
-npx ts-node spikes/pipeline/detector.ts
+# 4. Start the frontend
+cd frontend
+npm run dev
 ```
+
+Open http://localhost:3000 — create markets, place bets (demo), watch live odds.
 
 ## TxODDS Integration
 
-| Feature | API Endpoint | Usage |
-|---------|-------------|-------|
-| Auth | `POST /auth/guest/start` | Get JWT |
-| Subscribe | On-chain `subscribe()` | Free tier = service level 1 |
-| Activate | `POST /api/token/activate` | Get API token |
-| Odds Stream | `GET /api/odds/stream` | Real-time SSE |
-| Odds Snapshot | `GET /api/odds/snapshot/{id}` | Current prices |
-| Scores Stream | `GET /api/scores/stream` | Live match events |
-| Validation | `GET /api/odds/validation` | Merkle proofs |
+| Feature         | Usage                              |
+|-----------------|------------------------------------|
+| Auth            | Guest JWT via TxODDS API           |
+| Subscribe       | On-chain subscribe (free tier)     |
+| Odds Stream     | SSE real-time updates              |
+| Snapshot        | Current stable (de-margined) prices|
+| Settlement      | Merkle proof vs on-chain root      |
 
-**Devnet Program ID:** `6pW64gN1s2uqjHkn1unFeEjAwJkPGHoppGvS715wyP2J`
-**Mainnet Program ID:** `9ExbZjAapQww1vfcisDmrngPinHTEfpjYRWMunJgcKaA`
+**Devnet TxODDS Oracle:** `6pW64gN1s2uqjHkn1unFeEjAwJkPGHoppGvS715wyP2J`  
+**KickTick Program ID (placeholder):** `KTCKiCkTiCkTiCkTiCkTiCkTiCkTiCkTiCkTiCkTiCk`
 
-## Program Structure
+## Repository Structure
 
 ```
-txodds-hackathon/
-├── kicktick/
-│   ├── programs/kicktick/src/lib.rs    # Anchor program
-│   ├── client/src/
-│   │   ├── txodds-oracle.ts            # TxODDS API client
-│   │   └── market-manager.ts           # High-level SDK
-│   ├── tests/kicktick.ts               # Integration tests
-│   ├── Cargo.toml
-│   └── Anchor.toml
-├── spikes/
-│   ├── programs/spikes/src/lib.rs      # cNFT program
-│   ├── pipeline/detector.ts            # Spike detection
-│   ├── tests/
-│   └── Cargo.toml
+kicktick/
+├── README.md
 ├── deploy.sh
 ├── setup-local.sh
-└── README.md
+├── simulation.ts              # Settlement & spike detection tests
+├── simulation.js
+├── frontend/                  # Next.js UI
+│   ├── app/
+│   ├── components/
+│   └── lib/
+└── kicktick/                  # Anchor workspace
+    ├── Anchor.toml
+    ├── programs/kicktick/
+    │   └── src/lib.rs         # On-chain program
+    ├── client/
+    │   ├── src/
+    │   │   ├── txodds-oracle.ts   # TxODDS + SpikeDetector
+    │   │   └── market-manager.ts  # High-level SDK
+    │   └── package.json
+    └── tests/kicktick.ts
 ```
 
-## Security & Best Practices
+## Market Lifecycle (Sub-60s)
 
-- All settlements reference TxODDS Merkle proofs (on-chain verifiable)
-- PDA-based vaults (no admin key exposure)
-- Overflow checks enabled in release builds
-- Cooldown periods prevent spam minting
-- Grace periods for settlement (no front-running)
+1. Create market (specify type + short duration)
+2. Users place YES/NO bets (USDT)
+3. Market expires (15s–5m)
+4. Settle using TxODDS data + proof → outcome Yes/No
+5. Winners claim from vault
 
-## Hackathon Tracks Covered
+`odds_spike` markets use the built-in `SpikeDetector` (15% threshold by default) in the client.
 
-1. **Prediction Markets** — KickTick binary options with TxODDS settlement
-2. **Trading Agents** — Spike detection pipeline can trigger automated trades
-3. **Fan Engagement** — SPIKES collectible moments + album gamification
-4. **Data Integrity** — All data validated against on-chain Merkle roots
+## Running Simulations
+
+```bash
+# TypeScript
+npx ts-node simulation.ts
+
+# or JS
+node simulation.js
+```
+
+These demonstrate settlement logic for all market types without requiring a full chain.
+
+## Security Notes
+
+- All settlements reference verifiable TxODDS Merkle data
+- PDA-controlled vaults (no privileged withdrawal keys)
+- Strict duration + overflow checks in program
+- Grace period for settlement calls
 
 ## License
 

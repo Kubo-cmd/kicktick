@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+
+# Build outputs
+dist/
+build/
+.next/
+target/
+*.tsbuildinfo
+
+# Env / secrets
+.env
+.env.local
+*.pem
+
+# IDE / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Anchor / Solana
+.anchor/
+*.so
+deployment-*.json
+
+# Logs
+*.log
