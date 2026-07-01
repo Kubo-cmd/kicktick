@@ -63,10 +63,9 @@ Create and settle prediction markets in **under 60 seconds** using live TxODDS o
 ## Quick Start
 
 ```bash
-# 1. Clone and setup (on kicktick-only branch)
+# 1. Clone and setup
 git clone https://github.com/Kubo-cmd/kicktick.git
 cd kicktick
-git checkout kicktick-only
 ./setup-local.sh
 
 # 2. Configure wallet (devnet)
