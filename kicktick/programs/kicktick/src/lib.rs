@@ -332,9 +332,8 @@ pub struct CreateMarket<'info> {
     #[account(
         init,
         payer = creator,
-        space = 8 + 32 + 8 + 1 + 128 + 8 + 8 + 1 + 1 + 8 + 8 + 4 + 4 + 8 + 1,
-        seeds = b"market", creator.key().as_ref(), fixture_id.to_le_bytes().as_ref(), 
-               Clock::get()?.unix_timestamp.to_le_bytes().as_ref(),
+        space = 8 + 32 + 32 + 1 + 4 + 128 + 8 + 8 + 1 + 1 + 8 + 8 + 4 + 4 + 8 + 1,
+        seeds = [b"market", creator.key().as_ref(), &fixture_id.to_le_bytes()[..]],
         bump
     )]
     pub market: Account<'info, PredictionMarket>,
