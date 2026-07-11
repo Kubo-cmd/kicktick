@@ -25,5 +25,21 @@ target/
 *.so
 deployment-*.json
 
+# Deployer keypairs (keep local only, never commit)
+*-deployer.json
+*-keypair.json
+
 # Logs
 *.log
+
+skills-lock.json
+opencode.json
+
+docs/*.md
+docs/*.pdf
+docs/superpowers
+.agents
+kicktick/test-ledger
+test_scripts
+keypair.json
+test-ledger/

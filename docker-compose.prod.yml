@@ -1,0 +1,39 @@
+# KickTick — Production Environment
+# Usage: docker-compose -f docker-compose.prod.yml up -d
+
+services:
+  relayer:
+    build:
+      context: ./relayer
+      dockerfile: Dockerfile
+      target: prod
+    container_name: kicktick-relayer-prod
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    networks:
+      - kicktick-net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: prod
+    container_name: kicktick-frontend-prod
+    ports:
+      - "3000:80"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+    restart: unless-stopped
+    networks:
+      - kicktick-net
+
+networks:
+  kicktick-net:
+    driver: bridge

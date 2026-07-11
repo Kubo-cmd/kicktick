@@ -1,34 +1,50 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # setup-local.sh - Local development setup for KickTick
+set -euo pipefail
 
 echo "=== KickTick Dev Setup ==="
 
-# Check prerequisites
-command -v anchor >/dev/null 2>&1 || { echo "anchor CLI required: https://www.anchor-lang.com/docs/installation"; exit 1; }
-command -v solana >/dev/null 2>&1 || { echo "solana CLI required: https://docs.solana.com/cli/install"; exit 1; }
-command -v node >/dev/null 2>&1 || { echo "Node.js required"; exit 1; }
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$ROOT"
 
-# Install JS dependencies for client + frontend
-echo "Installing client dependencies..."
-cd kicktick/client && npm install
-cd ../..
+need() { command -v "$1" >/dev/null 2>&1 || { echo "Missing: $1 — $2"; exit 1; }; }
+need node "https://nodejs.org"
+need npm  "comes with Node.js"
 
-echo "Installing frontend dependencies..."
-cd frontend && npm install
-cd ..
+HAVE_ANCHOR=0
+if command -v anchor >/dev/null 2>&1 && command -v solana >/dev/null 2>&1; then
+  HAVE_ANCHOR=1
+else
+  echo "Note: anchor/solana CLI not found — skipping on-chain build/tests."
+  echo "      Install: https://www.anchor-lang.com/docs/installation"
+  echo "      Or use Docker: ./scripts/build.sh contracts"
+fi
 
-# Build KickTick program
-echo "Building KickTick program..."
-cd kicktick && anchor build && cd ..
+echo "Installing program test deps..."
+(cd kicktick && npm install)
 
-# Run tests
-echo "Running tests..."
-cd kicktick && anchor test && cd ..
+echo "Installing relayer deps..."
+(cd relayer && npm install)
+
+echo "Installing frontend deps..."
+(cd frontend && npm install)
+
+if [ "$HAVE_ANCHOR" -eq 1 ]; then
+  echo "Building KickTick program..."
+  (cd kicktick && anchor build)
+  echo "Running anchor tests..."
+  (cd kicktick && anchor test) || echo "anchor test failed (validator may be unavailable) — continuing"
+fi
+
+echo "Running pure logic simulation..."
+node simulation.js
 
 echo ""
-echo "Setup complete! Next steps:"
-echo "  1. solana-keygen new --outfile ~/.config/solana/id.json"
-echo "  2. solana airdrop 2   # (devnet)"
-echo "  3. cd frontend && npm run dev"
+echo "Setup complete. Next steps:"
+echo "  1. cp .env.example .env   # fill TxLINE + program IDs"
+echo "  2. solana-keygen new --outfile ~/.config/solana/id.json"
+echo "  3. solana airdrop 2       # devnet"
+echo "  4. cd frontend && npm run dev"
+echo "  5. cd relayer && npm run dev"
 echo ""
-echo "Deploy: ./deploy.sh devnet"
+echo "Docker path: ./scripts/build.sh all && ./scripts/deploy.sh devnet"

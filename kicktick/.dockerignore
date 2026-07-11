@@ -1,0 +1,16 @@
+# KickTick Contracts .dockerignore
+target/
+node_modules/
+*.log
+.DS_Store
+.git/
+.gitignore
+Anchor.toml.bak
+migrations/
+
+# IDL artifacts (rebuilt inside container)
+target/idl/
+target/types/
+
+# Tests (optional, keep if you want to run tests in container)
+# tests/

@@ -1,0 +1,13 @@
+# Frontend .dockerignore
+node_modules/
+.next/
+out/
+*.log
+.DS_Store
+.git/
+.gitignore
+.env
+.env.local
+
+# TypeScript build info
+*.tsbuildinfo

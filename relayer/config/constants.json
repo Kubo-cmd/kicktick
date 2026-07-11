@@ -1,0 +1,11 @@
+{
+  "network": "devnet",
+  "kicktickProgramId": "a9G9tTEmeALLBi2zf7zR4adbpR4U1N3r6cgRtZUV3o2",
+  "txoracleProgramId": "6pW64gN1s2uqjHkn1unFeEjAwJkPGHoppGvS715wyP2J",
+  "usdtMint": "ELWTKspHKCnCfCiCiqYw1EDH77k8VCP74dK9qytG2Ujh",
+  "txlMint": "4Zao8ocPhmMgq7PdsYWyxvqySMGx7xb9cMftPMkEokRG",
+  "solanaRpcUrl": "https://api.devnet.solana.com",
+  "txlineApiHost": "https://txline-dev.txodds.com",
+  "competitionId": 72,
+  "wsPort": 8080
+}
