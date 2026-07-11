@@ -172,8 +172,13 @@ Deployment info saved to `deployment-{network}.json`.
 |-------|-------------|--------|
 | 0 | TxLINE auth, CPI spike test, token verification | ✅ Done |
 | 1 | Anchor program (10 instructions, 5 PDAs, native SOL) | ✅ Done |
-| 2 | Relayer SSE parser, market triggers, crank, WebSocket | ⏳ In progress |
-| 3 | Replay engine + demo | ⏳ Pending |
+| 2 | Relayer SSE parser, market triggers, crank, WebSocket | ✅ Done (core modules) |
+| 3 | Logic sim + Docker/Vite UI | ✅ Done (22/22 sim) |
+| 4 | Live demo polish + Superteam submission pack | ⏳ In progress |
+
+**Track:** Prediction Markets and Settlement ($18k USDT) — Superteam World Cup · deadline 2026-07-19
+
+**Submit:** live MVP link · demo video · public repo `https://github.com/Kubo-cmd/kicktick`
 
 ## Security
 

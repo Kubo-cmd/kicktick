@@ -29,7 +29,7 @@ Sub-minute micro prediction markets on Solana. Create + settle markets in <60s u
 |---|-----------|-----|----------|---------|
 | 1 | **Anchor Program** | `kicktick/programs/kicktick/` | Rust (Anchor 1.0.0) | On-chain PDAs, CPI settlement, bet accounting |
 | 2 | **Relayer** | `relayer/` | Node/TS | Off-chain crank: SSE ingestion, market triggers, proof gathering, tx builder |
-| 3 | **Frontend** | `frontend/` | Next.js + React + Tailwind | UI with wallet, market cards, live odds |
+| 3 | **Frontend** | `frontend/` | Vite + React + Tailwind | UI with wallet, market cards, live odds |
 
 ---
 
@@ -80,7 +80,8 @@ All docs carry YAML frontmatter (`id`, `type`, `service`, `depends_on`, `related
 
 | Component | Address |
 |-----------|---------|
-| KickTick program | `CCmcpUZttSJqUabxBcyvHp4uC89EkrXce5YSEvRgE7tc` |
+| KickTick program (devnet) | `a9G9tTEmeALLBi2zf7zR4adbpR4U1N3r6cgRtZUV3o2` |
+| KickTick program (localnet) | `CCmcpUZttSJqUabxBcyvHp4uC89EkrXce5YSEvRgE7tc` |
 | TxOracle program | `6pW64gN1s2uqjHkn1unFeEjAwJkPGHoppGvS715wyP2J` |
 | TxL mint (Token-2022) | `4Zao8ocPhmMgq7PdsYWyxvqySMGx7xb9cMftPMkEokRG` |
 | USDT mint (Token) | `ELWTKspHKCnCfCiCiqYw1EDH77k8VCP74dK9qytG2Ujh` |

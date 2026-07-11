@@ -6,8 +6,8 @@ export const CONFIG = {
   cluster: 'devnet',
   rpcUrl: 'https://api.devnet.solana.com',
 
-  // KickTick program (replace after deploy)
-  kicktickProgramId: 'DU7KRbgpjdhKtmHwNawUCvy61WMazi76unzNB2Y1chTJ',
+  // KickTick program (devnet — matches declare_id! + Anchor.toml [programs.devnet])
+  kicktickProgramId: 'a9G9tTEmeALLBi2zf7zR4adbpR4U1N3r6cgRtZUV3o2',
 
   // TxODDS Oracle
   txodds: {
