@@ -8,7 +8,7 @@ import { WebSocketProvider } from '@/admin/WebSocketProvider';
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/kicktick">
       <WalletContextProvider>
         <div className="min-h-screen">
           <Header />

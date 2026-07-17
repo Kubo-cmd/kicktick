@@ -38,8 +38,8 @@ Create and settle prediction markets in **under 60 seconds** using live TxODDS o
                                │
                                ▼
 ┌──────────────────────────────────────────────────────┐
-│  RELAYER (Node/TS — off-chain crank, no DB)          │
-│                                                      │
+│  RELAYER (Node/TS — off-chain crank, no DB)           │
+│                                                       │
 │  txline-auth → SSE parser → fixture-watcher          │
 │  market-trigger (rules engine)                       │
 │  proof-gatherer → crank (build+sign+send tx)         │
@@ -48,13 +48,13 @@ Create and settle prediction markets in **under 60 seconds** using live TxODDS o
            │ CPI validate_stat          │ WebSocket
            ▼                            ▼
 ┌─────────────────────┐    ┌─────────────────────────┐
-│ Solana Devnet       │    │ Frontend (Vite + React)       │
-│                     │    │                          │
-│ kicktick program    │    │ Wallet (Phantom/Solflare)│
-│  init_config        │    │ MarketCard (bet UI)      │
-│  init_match         │    │ CreateMarketModal        │
-│  open_round         │    │ LiveOddsFeed             │
-│  place_bet          │    │                          │
+│ Solana Devnet       │    │ Frontend (Vite + React) │
+│                     │    │                         │
+│ kicktick program    │    │ Wallet (Phantom/Solf)  │
+│  init_config        │    │ MarketCard (bet UI)     │
+│  init_match         │    │ CreateMarketModal       │
+│  open_round         │    │ LiveOddsFeed            │
+│  place_bet          │    │                         │
 │  settle_round (CPI) │    └─────────────────────────┘
 │  settle_offchain    │
 │  confirm_round      │
@@ -63,7 +63,7 @@ Create and settle prediction markets in **under 60 seconds** using live TxODDS o
 │  challenge_equivoc. │
 │                     │
 │ txoracle program    │
-│  validate_stat (CPI)│
+│  validate_stat(CPI) │
 └─────────────────────┘
 ```
 

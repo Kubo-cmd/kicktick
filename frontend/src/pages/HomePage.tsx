@@ -1,6 +1,4 @@
 import { useState } from 'react';
-import { WalletContextProvider } from '@/lib/WalletContext';
-import Header from '@/components/Header';
 import MarketCard from '@/components/MarketCard';
 import CreateMarketModal from '@/components/CreateMarketModal';
 import LiveOddsFeed from '@/components/LiveOddsFeed';
@@ -52,15 +50,69 @@ const DEMO_MARKETS = [
   },
 ];
 
+const ARCH_DIAGRAM = [
+  "                         TxLINE API (txline-dev.txodds.com)",
+  "                      ┌────────────────────────────────────────┐",
+  "                      │POST /auth/guest/start → JWT            │",
+  "                      │POST /api/token/activate                │",
+  "                      │GET  /api/odds/snapshot/{id}            │",
+  "                      │GET  /api/scores/stat-validation        │",
+  "                      │GET  /api/odds/stream (SSE)             │",
+  "                      │GET  /api/scores/stream (SSE)           │",
+  "                      └────────────────────────────────────────┘",
+  "                                    │",
+  "                                    ▼",
+  "┌────────────────────────────────────────────────────────┐",
+  "│RELAYER (Node/TS crank — no DB, no REST API)            │",
+  "│                                                        │",
+  "│txline-auth.ts ──► txodds-client SDK ──► JWT + API token│",
+  "│                                                        │",
+  "│SSE scores stream ──► fixture-watcher (StatusId 1-19)   │",
+  "│     │                                                  │",
+  "│     ▼                                                  │",
+  "│market-trigger.ts (rules engine)                        │",
+  "│  • Event-triggered: goal→NextGoalSide, corner→NextCorne│",
+  "│  • Cron: every 5min→GoalInWindow                       │",
+  "│  • Shootout mode: PE status→sequential rounds          │",
+  "│  • Timeouts: deadline→settle(NO)                       │",
+  "│     │                                                  │",
+  "│     ├──► proof-gatherer (GET /stat-validation)         │",
+  "│     │       │                                          │",
+  "│     │       ▼                                          │",
+  "│     │   crank.ts (build tx → sign → send to devnet)    │",
+  "│     │       │                                          │",
+  "│     └──► ws-server.ts (WebSocket → frontend)           │",
+  "└────────────────────────────────────────────────────────┘",
+  "│CPI validate_stat                                       ││ WebSocket",
+  "           ▼                                 ▼",
+  "┌──────────────────────┐       ┌──────────────────────┐",
+  "│Solana Devnet         │       │Frontend (Vite + React│",
+  "│                      │       │                      │",
+  "│kicktick program      │       │Header (wallet)       │",
+  "│  init_config         │       │MarketCard (bet UI)   │",
+  "│  init_match          │       │CreateMarketModal     │",
+  "│  open_round          │       │LiveOddsFeed (demo)   │",
+  "│  place_bet           │       │                      │",
+  "│  settle_round        │       │Wallet: Phantom/Solf  │",
+  "│  settle_offchain_    │       │                      │",
+  "│    round             │       │Currently: demo data  │",
+  "│  confirm_round       │       │No on-chain integra-  │",
+  "│  cancel_round        │       │tion yet              │",
+  "│  challenge_equivoca- │       │                      │",
+  "│    tion              │       │No on-chain integra-  │",
+  "│  txoracle program    │       │tion yet              │",
+  "│    validate_stat     │       │                      │",
+  "│    (CPI)             │       │                      │",
+  "│                      │       │                      │",
+  "└──────────────────────┘       └──────────────────────┘",
+].join("\n");
+
 export default function HomePage() {
   const [showCreate, setShowCreate] = useState(false);
 
   return (
-    <WalletContextProvider>
-      <div className="min-h-screen">
-        <Header />
-
-        <section className="px-6 py-12 max-w-6xl mx-auto text-center">
+    <div className="min-h-screen">
+      <section className="px-6 py-12 max-w-6xl mx-auto text-center">
           <h1 className="text-4xl md:text-6xl font-bold mb-4">
             <span className="gradient-text">KickTick</span>
           </h1>
@@ -118,10 +170,19 @@ export default function HomePage() {
           </div>
         </section>
 
+        <section id="architecture" className="px-6 max-w-6xl mx-auto pb-16">
+          <div className="mb-4">
+            <h2 className="text-xl font-semibold">Architecture</h2>
+            <p className="text-sm text-gray-400">Three subsystems: Anchor program (on-chain) ↔ Relayer (off-chain crank) ↔ Frontend.</p>
+          </div>
+          <div className="card p-4 overflow-x-auto">
+            <pre className="text-xs leading-relaxed text-gray-300 whitespace-pre">{ARCH_DIAGRAM}</pre>
+          </div>
+        </section>
+
         {showCreate && (
           <CreateMarketModal onClose={() => setShowCreate(false)} />
         )}
       </div>
-    </WalletContextProvider>
   );
 }

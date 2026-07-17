@@ -1,0 +1,53 @@
+                         TxLINE API (txline-dev.txodds.com)
+                      ┌──────────────────────────────────┐
+                      │  POST /auth/guest/start → JWT     │
+                      │  POST /api/token/activate         │
+                      │  GET  /api/odds/snapshot/{id}     │
+                      │  GET  /api/scores/stat-validation │
+                      │  GET  /api/odds/stream (SSE)      │
+                      │  GET  /api/scores/stream (SSE)    │
+                      └─────────────┬────────────────────┘
+                                    │
+                                    ▼
+┌────────────────────────────────────────────────────────┐
+│  RELAYER (Node/TS crank — no DB, no REST API)           │
+│                                                          │
+│  txline-auth.ts ──► txodds-client SDK ──► JWT + API token│
+│                                                          │
+│  SSE scores stream ──► fixture-watcher (StatusId 1-19)  │
+│       │                                                  │
+│       ▼                                                  │
+│  market-trigger.ts (rules engine)                        │
+│    • Event-triggered: goal→NextGoalSide, corner→NextCorner│
+│    • Cron: every 5min→GoalInWindow                       │
+│    • Shootout mode: PE status→sequential rounds          │
+│    • Timeouts: deadline→settle(NO)                       │
+│       │                                                  │
+│       ├──► proof-gatherer (GET /stat-validation)         │
+│       │       │                                          │
+│       │       ▼                                          │
+│       │   crank.ts (build tx → sign → send to devnet)   │
+│       │       │                                          │
+│       └──► ws-server.ts (WebSocket → frontend)          │
+└──────────┬─────────────────────────────────────────────┘
+           │ CPI validate_stat               │ WebSocket
+           ▼                                 ▼
+┌──────────────────────┐       ┌──────────────────────┐
+│ Solana Devnet        │       │ Frontend (Next.js)   │
+│                      │       │                       │
+│ kicktick program     │       │ Header (wallet)      │
+│   init_config        │       │ MarketCard (bet UI)  │
+│   init_match         │       │ CreateMarketModal    │
+│   open_round         │       │ LiveOddsFeed (demo)  │
+│   place_bet          │       │                       │
+│   settle_round       │       │ Wallet: Phantom/Solf │
+│   settle_offchain_   │       │                       │
+│     round            │       │ Currently: demo data │
+│   confirm_round      │       │ No on-chain integra- │
+│   cancel_round       │       │ tion yet             │
+│   challenge_equivoca-│       │                       │
+│     tion             │       │ No on-chain integra- │
+│   txoracle program   │       │ tion yet             │
+│     validate_stat    │       │                       │
+│     (CPI)            │       │                       │
+└──────────────────────┘       └──────────────────────┘
