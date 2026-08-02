@@ -6,7 +6,8 @@ import {
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom';
 import { SolflareWalletAdapter } from '@solana/wallet-adapter-solflare';
-import { clusterApiUrl } from '@solana/web3.js';
+
+import { CONFIG } from './constants';
 
 import '@solana/wallet-adapter-react-ui/styles.css';
 
@@ -16,7 +17,8 @@ const Wallets = WalletProvider as ComponentType<PropsWithChildren<{ wallets: any
 const Modal = WalletModalProvider as ComponentType<PropsWithChildren>;
 
 export function WalletContextProvider({ children }: { children: ReactNode }) {
-  const endpoint = useMemo(() => clusterApiUrl('devnet'), []);
+  // Single source of truth: CONFIG.rpcUrl (devnet default, localnet via VITE_ env).
+  const endpoint = useMemo(() => CONFIG.rpcUrl, []);
 
   const wallets = useMemo(
     () => [
