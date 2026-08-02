@@ -1,0 +1,1 @@
+{"compilerOptions":{"target":"ES2023","module":"NodeNext","moduleResolution":"NodeNext","lib":["ES2023","DOM"],"rootDir":".","outDir":"dist","strict":true,"skipLibCheck":true,"esModuleInterop":true,"resolveJsonModule":true,"noUncheckedIndexedAccess":true},"include":["src/**/*.ts","test/**/*.ts"]}
