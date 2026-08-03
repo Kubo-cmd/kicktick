@@ -8,7 +8,6 @@ import {
   LAMPORTS_PER_SOL,
   PublicKey,
   SystemProgram,
-  Transaction,
 } from "@solana/web3.js";
 import assert from "node:assert/strict";
 import type { Kicktick } from "../target/types/kicktick";
@@ -18,10 +17,14 @@ const MATCH_SEED = Buffer.from("match");
 const MATCH_VAULT_SEED = Buffer.from("match_vault");
 const ROUND_SEED = Buffer.from("round");
 const POSITION_SEED = Buffer.from("position");
+const BPF_LOADER_UPGRADEABLE_PROGRAM_ID = new PublicKey(
+  "BPFLoaderUpgradeab1e11111111111111111111111",
+);
 
 const YES = 0;
 const NO = 1;
 const YES_WINNER = 1;
+const NO_WINNER = 2;
 const YES_STAKE = new BN(20_000_000);
 const NO_STAKE = new BN(10_000_000);
 const FINALITY_WAIT_MS = 61_000;
@@ -149,8 +152,17 @@ describe("kicktick", function () {
   const longDeadlineRoundId = new BN(103);
   const zeroAmountRoundId = new BN(104);
   const invalidSideRoundId = new BN(105);
+  const unauthorizedOpenRoundId = new BN(106);
+  const inconsistentSettlementRoundId = new BN(107);
+  const invalidMarketOutcomeRoundId = new BN(109);
+  const earlySettlementRoundId = new BN(110);
+  const disabledOnchainRoundId = new BN(111);
 
   const config = configPda(program.programId);
+  const programData = PublicKey.findProgramAddressSync(
+    [program.programId.toBuffer()],
+    BPF_LOADER_UPGRADEABLE_PROGRAM_ID,
+  )[0];
   const matchAddress = matchPda(program.programId, fixtureId);
   const matchVault = matchVaultPda(program.programId, matchAddress);
 
@@ -176,6 +188,7 @@ describe("kicktick", function () {
       )
       .accountsStrict({
         authority: admin,
+        config,
         matchPda: matchAddress,
         round: roundAddress(roundId),
         systemProgram: SystemProgram.programId,
@@ -216,6 +229,8 @@ describe("kicktick", function () {
       .initConfig()
       .accountsStrict({
         admin,
+        program: program.programId,
+        programData,
         config,
         systemProgram: SystemProgram.programId,
       })
@@ -283,6 +298,27 @@ describe("kicktick", function () {
     );
   });
 
+  it("rejects on-chain markets until oracle settlement is implemented", async () => {
+    await expectAnchorError(
+      program.methods
+        .openRound(
+          disabledOnchainRoundId,
+          { goalInWindow: {} },
+          new BN(15),
+          new BN(300),
+        )
+        .accountsStrict({
+          authority: admin,
+          config,
+          matchPda: matchAddress,
+          round: roundAddress(disabledOnchainRoundId),
+          systemProgram: SystemProgram.programId,
+        })
+        .rpc(),
+      "OnchainSettlementDisabled",
+    );
+  });
+
   it("rejects lock durations above 300 seconds", async () => {
     await expectAnchorError(
       openRound(longLockRoundId, new BN(301)),
@@ -294,6 +330,35 @@ describe("kicktick", function () {
     await expectAnchorError(
       openRound(longDeadlineRoundId, new BN(15), new BN(301)),
       "InvalidDeadline",
+    );
+  });
+
+  it("rejects deadlines earlier than the market lock", async () => {
+    await expectAnchorError(
+      openRound(new BN(108), new BN(30), new BN(29)),
+      "InvalidDeadline",
+    );
+  });
+
+  it("rejects round creation by a non-admin signer", async () => {
+    await expectAnchorError(
+      program.methods
+        .openRound(
+          unauthorizedOpenRoundId,
+          penaltyShotMarket(),
+          new BN(15),
+          new BN(300),
+        )
+        .accountsStrict({
+          authority: unauthorized.publicKey,
+          config,
+          matchPda: matchAddress,
+          round: roundAddress(unauthorizedOpenRoundId),
+          systemProgram: SystemProgram.programId,
+        })
+        .signers([unauthorized])
+        .rpc(),
+      "Unauthorized",
     );
   });
 
@@ -345,9 +410,18 @@ describe("kicktick", function () {
     assert.ok(round.totalNo.eq(NO_STAKE));
     assert.equal(yesPosition.side, YES);
     assert.ok(yesPosition.amount.eq(YES_STAKE));
+    assert.equal(yesPosition.version, 2);
     assert.equal(noPosition.side, NO);
     assert.ok(noPosition.amount.eq(NO_STAKE));
+    assert.equal(noPosition.version, 2);
     assert.ok(matchState.totalDeposited.eq(YES_STAKE.add(NO_STAKE)));
+  });
+
+  it("rejects mixing sides in one position PDA", async () => {
+    await expectAnchorError(
+      placeBet(yesBettor, happyRoundId, NO, new BN(1_000_000)),
+      "PositionSideMismatch",
+    );
   });
 
   it("rejects betting after a round has been cancelled", async () => {
@@ -356,6 +430,7 @@ describe("kicktick", function () {
       .cancelRound()
       .accountsStrict({
         authority: admin,
+        config,
         round: roundAddress(cancelledRoundId),
       })
       .rpc();
@@ -372,11 +447,76 @@ describe("kicktick", function () {
     assert.equal(state.winner, 0);
   });
 
+  it("rejects inconsistent outcome and winner data", async () => {
+    await openRound(inconsistentSettlementRoundId);
+    await expectAnchorError(
+      program.methods
+        .settleOffchainRound({ yes: {} }, NO_WINNER)
+        .accountsStrict({
+          caller: admin,
+          config,
+          matchPda: matchAddress,
+          round: roundAddress(inconsistentSettlementRoundId),
+        })
+        .rpc(),
+      "OutcomeWinnerMismatch",
+    );
+  });
+
+  it("rejects outcomes that are invalid for an off-chain market", async () => {
+    await openRound(invalidMarketOutcomeRoundId);
+    await expectAnchorError(
+      program.methods
+        .settleOffchainRound({ home: {} }, YES_WINNER)
+        .accountsStrict({
+          caller: admin,
+          config,
+          matchPda: matchAddress,
+          round: roundAddress(invalidMarketOutcomeRoundId),
+        })
+        .rpc(),
+      "InvalidMarketOutcome",
+    );
+  });
+
+  it("rejects off-chain settlement before the betting lock time", async () => {
+    await openRound(earlySettlementRoundId);
+    await expectAnchorError(
+      program.methods
+        .settleOffchainRound({ yes: {} }, YES_WINNER)
+        .accountsStrict({
+          caller: admin,
+          config,
+          matchPda: matchAddress,
+          round: roundAddress(earlySettlementRoundId),
+        })
+        .rpc(),
+      "BettingWindowStillOpen",
+    );
+  });
+
+  it("rejects settlement when the selected winning side has no stake", async () => {
+    await sleep(16_000);
+    await expectAnchorError(
+      program.methods
+        .settleOffchainRound({ yes: {} }, YES_WINNER)
+        .accountsStrict({
+          caller: admin,
+          config,
+          matchPda: matchAddress,
+          round: roundAddress(earlySettlementRoundId),
+        })
+        .rpc(),
+      "EmptyWinningPool",
+    );
+  });
+
   it("settles the happy-path round with YES as winner", async () => {
     await program.methods
       .settleOffchainRound({ yes: {} }, YES_WINNER)
       .accountsStrict({
         caller: admin,
+        config,
         matchPda: matchAddress,
         round: roundAddress(happyRoundId),
       })
@@ -417,8 +557,8 @@ describe("kicktick", function () {
       yesBettor.publicKey,
     );
 
-    const claimInstruction = await program.methods
-      .claimWinnings()
+    await program.methods
+      .claimWinnings(fixtureId, happyRoundId)
       .accountsStrict({
         winner: yesBettor.publicKey,
         matchPda: matchAddress,
@@ -427,21 +567,8 @@ describe("kicktick", function () {
         matchVault,
         systemProgram: SystemProgram.programId,
       })
-      .instruction();
-
-    // ClaimWinnings' account context declares fixture_id and round_id for PDA
-    // validation, while the generated IDL correctly exposes no method args.
-    // Append those context-only values after the discriminator so Anchor can
-    // validate the declared seeds when this integration suite is executed.
-    claimInstruction.data = Buffer.concat([
-      claimInstruction.data,
-      i64(fixtureId),
-      u64(happyRoundId),
-    ]);
-    await provider.sendAndConfirm(
-      new Transaction().add(claimInstruction),
-      [yesBettor],
-    );
+      .signers([yesBettor])
+      .rpc();
 
     const [round, position, vaultAfter, winnerAfter] = await Promise.all([
       program.account.round.fetch(roundAddress(happyRoundId)),

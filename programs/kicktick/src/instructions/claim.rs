@@ -51,17 +51,22 @@ pub fn claim_winnings_handler(ctx: Context<ClaimWinnings>) -> Result<()> {
     let round = &ctx.accounts.round;
     let position = &mut ctx.accounts.position;
 
-    let payout: u64;
-
     // Void / cancelled → full refund.
     let is_void = round.winner == Some(0)
         || round.outcome == RoundOutcome::Cancelled
         || round.status == RoundStatus::Voided
         || round.status == RoundStatus::Cancelled;
 
-    if is_void {
-        payout = position.amount;
+    let payout = if is_void {
+        position.amount
     } else {
+        // Pre-upgrade positions may aggregate stakes from multiple sides because
+        // the old producer overwrote `side`. They remain readable for principal
+        // refunds, but can never enter proportional winner accounting.
+        require!(
+            position_version_allows_payout(position.version, false),
+            KicktickError::UnsupportedPositionVersion
+        );
         require!(
             round.status == RoundStatus::Settled,
             KicktickError::RoundNotSettled
@@ -86,13 +91,18 @@ pub fn claim_winnings_handler(ctx: Context<ClaimWinnings>) -> Result<()> {
             _ => round.total_abstain,
         };
         require!(winning_pool > 0, KicktickError::Overflow);
+        require!(
+            position_is_covered(position.amount, winning_pool),
+            KicktickError::InvalidPositionAccounting
+        );
 
-        payout = (position.amount as u128)
+        let computed = (position.amount as u128)
             .checked_mul(total_pool as u128)
             .ok_or(KicktickError::Overflow)?
             .checked_div(winning_pool as u128)
-            .ok_or(KicktickError::Overflow)? as u64;
-    }
+            .ok_or(KicktickError::Overflow)?;
+        u64::try_from(computed).map_err(|_| KicktickError::Overflow)?
+    };
 
     // Pay out of the match vault via PDA signer.
     let match_key = ctx.accounts.match_pda.key();
@@ -115,6 +125,14 @@ pub fn claim_winnings_handler(ctx: Context<ClaimWinnings>) -> Result<()> {
     Ok(())
 }
 
+fn position_is_covered(position_amount: u64, winning_pool: u64) -> bool {
+    position_amount <= winning_pool
+}
+
+fn position_version_allows_payout(version: u8, is_void: bool) -> bool {
+    is_void || version == Position::CURRENT_VERSION
+}
+
 // refund_bet is the void/cancelled branch of claim_winnings; kept as a named
 // entry point for IDL parity with the docs.
 pub fn refund_bet_handler(ctx: Context<ClaimWinnings>) -> Result<()> {
@@ -125,4 +143,22 @@ pub fn refund_bet_handler(ctx: Context<ClaimWinnings>) -> Result<()> {
         || round.status == RoundStatus::Cancelled;
     require!(is_void, KicktickError::RoundNotRefundable);
     claim_winnings_handler(ctx)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{position_is_covered, position_version_allows_payout};
+
+    #[test]
+    fn rejects_legacy_mixed_side_position_larger_than_winning_pool() {
+        assert!(position_is_covered(10, 10));
+        assert!(!position_is_covered(11, 1));
+    }
+
+    #[test]
+    fn legacy_positions_are_refund_only() {
+        assert!(position_version_allows_payout(255, true));
+        assert!(!position_version_allows_payout(255, false));
+        assert!(position_version_allows_payout(2, false));
+    }
 }

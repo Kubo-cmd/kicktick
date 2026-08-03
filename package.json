@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "test": "ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts",
-    "typecheck": "tsc --noEmit -p ./tsconfig.json"
+    "typecheck": "tsc --noEmit -p ./tsconfig.json",
+    "audit:legacy-solvency": "node scripts/audit-legacy-solvency.mjs"
   },
   "devDependencies": {
     "@coral-xyz/anchor": "0.31.1",

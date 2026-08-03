@@ -78,11 +78,17 @@ pub mod kicktick {
         instructions::confirm_round::handler(ctx)
     }
 
-    pub fn claim_winnings(ctx: Context<ClaimWinnings>) -> Result<()> {
+    pub fn claim_winnings(
+        ctx: Context<ClaimWinnings>,
+        fixture_id: i64,
+        round_id: u64,
+    ) -> Result<()> {
+        let _ = (fixture_id, round_id);
         instructions::claim::claim_winnings_handler(ctx)
     }
 
-    pub fn refund_bet(ctx: Context<ClaimWinnings>) -> Result<()> {
+    pub fn refund_bet(ctx: Context<ClaimWinnings>, fixture_id: i64, round_id: u64) -> Result<()> {
+        let _ = (fixture_id, round_id);
         instructions::claim::refund_bet_handler(ctx)
     }
 

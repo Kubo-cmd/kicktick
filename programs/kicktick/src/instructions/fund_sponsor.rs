@@ -1,7 +1,6 @@
 // fund_sponsor + sponsor_round — global sponsor liquidity.
 
 use anchor_lang::prelude::*;
-use anchor_lang::system_program;
 
 use crate::constants::*;
 use crate::errors::*;
@@ -21,42 +20,26 @@ pub struct FundSponsor<'info> {
     )]
     pub sponsor_vault: Account<'info, SponsorVault>,
 
-    /// CHECK: match vault receiving sponsor liquidity (system-owned).
-    #[account(mut)]
-    pub match_vault: UncheckedAccount<'info>,
-
     pub system_program: Program<'info, System>,
 }
 
-pub fn fund_sponsor(ctx: Context<FundSponsor>, amount: u64) -> Result<()> {
-    require!(amount > 0, KicktickError::InvalidAmount);
-    let vault = &mut ctx.accounts.sponsor_vault;
-    if vault.bump == 0 {
-        vault.bump = ctx.bumps.sponsor_vault;
-    }
-
-    system_program::transfer(
-        CpiContext::new(
-            ctx.accounts.system_program.to_account_info(),
-            system_program::Transfer {
-                from: ctx.accounts.sponsor.to_account_info(),
-                to: ctx.accounts.match_vault.to_account_info(),
-            },
-        ),
-        amount,
-    )?;
-
-    vault.total_balance = vault
-        .total_balance
-        .checked_add(amount)
-        .ok_or(KicktickError::Overflow)?;
-    Ok(())
+pub fn fund_sponsor(_ctx: Context<FundSponsor>, _amount: u64) -> Result<()> {
+    // A global multi-donor vault has no contribution ledger or recovery path yet.
+    // Reject deposits rather than accepting SOL that cannot be safely reclaimed.
+    err!(KicktickError::SponsorFlowDisabled)
 }
 
 #[derive(Accounts)]
 pub struct SponsorRound<'info> {
     #[account(mut)]
-    pub sponsor: Signer<'info>,
+    pub authority: Signer<'info>,
+
+    #[account(
+        seeds = [CONFIG_SEED],
+        bump = config.bump,
+        constraint = config.admin == authority.key() @ KicktickError::Unauthorized
+    )]
+    pub config: Account<'info, Config>,
 
     #[account(
         mut,
@@ -65,27 +48,22 @@ pub struct SponsorRound<'info> {
     )]
     pub sponsor_vault: Account<'info, SponsorVault>,
 
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [MATCH_SEED, &match_pda.fixture_id.to_le_bytes()],
+        bump
+    )]
     pub match_pda: Account<'info, Match_>,
+
+    /// CHECK: canonical system-owned vault for this match PDA.
+    #[account(
+        mut,
+        seeds = [MATCH_VAULT_SEED, match_pda.key().as_ref()],
+        bump = match_pda.vault_bump
+    )]
+    pub match_vault: UncheckedAccount<'info>,
 }
 
-pub fn sponsor_round(ctx: Context<SponsorRound>, amount: u64) -> Result<()> {
-    require!(amount > 0, KicktickError::InvalidAmount);
-    let vault = &mut ctx.accounts.sponsor_vault;
-    require!(
-        vault.total_balance.saturating_sub(vault.allocated) >= amount,
-        KicktickError::InsufficientSponsorLiquidity
-    );
-
-    vault.allocated = vault
-        .allocated
-        .checked_add(amount)
-        .ok_or(KicktickError::Overflow)?;
-    ctx.accounts.match_pda.total_sponsored = ctx
-        .accounts
-        .match_pda
-        .total_sponsored
-        .checked_add(amount)
-        .ok_or(KicktickError::Overflow)?;
-    Ok(())
+pub fn sponsor_round(_ctx: Context<SponsorRound>, _amount: u64) -> Result<()> {
+    err!(KicktickError::SponsorFlowDisabled)
 }

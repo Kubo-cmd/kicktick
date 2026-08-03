@@ -20,7 +20,8 @@ Create and settle prediction markets in **under 60 seconds** using live TxODDS o
 ## Key Features
 
 - **Native SOL** betting — no SPL tokens for wagers
-- **CPI settlement** — `settle_round` calls `txoracle::validate_stat` on-chain
+- **Fail-closed oracle path** — `settle_round` rejects settlement until the exact
+  `txoracle::validate_stat` CPI account layout is integrated
 - **Off-chain settlement** — `settle_offchain_round` for PenaltyShot/VARCheck
 - **Sub-minute markets** — 15s lock, 60s finality delay, 15–300s duration
 - **Event-driven** — SSE from TxLINE triggers market creation and settlement
@@ -45,7 +46,7 @@ Create and settle prediction markets in **under 60 seconds** using live TxODDS o
 │  proof-gatherer → crank (build+sign+send tx)         │
 │  ws-server → WebSocket to frontend                   │
 └──────────┬───────────────────────────────────────────┘
-           │ CPI validate_stat          │ WebSocket
+           │ settlement tx              │ WebSocket
            ▼                            ▼
 ┌─────────────────────┐    ┌─────────────────────────┐
 │ Solana Devnet       │    │ Frontend (Vite + React) │
@@ -55,7 +56,7 @@ Create and settle prediction markets in **under 60 seconds** using live TxODDS o
 │  init_match         │    │ CreateMarketModal       │
 │  open_round         │    │ LiveOddsFeed            │
 │  place_bet          │    │                         │
-│  settle_round (CPI) │    └─────────────────────────┘
+│  settle_round (guard)│    └─────────────────────────┘
 │  settle_offchain    │
 │  confirm_round      │
 │  claim_winnings     │
@@ -63,7 +64,7 @@ Create and settle prediction markets in **under 60 seconds** using live TxODDS o
 │  challenge_equivoc. │
 │                     │
 │ txoracle program    │
-│  validate_stat(CPI) │
+│  CPI pending IDL    │
 └─────────────────────┘
 ```
 
@@ -161,8 +162,9 @@ Deployment info saved to `deployment-{network}.json`.
 1. Relayer detects match event via SSE (goal, corner, card, etc.)
 2. `open_round` — market opens with specified duration
 3. Users place YES/NO bets (native SOL)
-4. Market locks at deadline
-5. `settle_round` via CPI to `txoracle::validate_stat` with Merkle proof
+4. Betting locks after `lock_seconds`; the round deadline remains the hard expiry
+5. Off-chain markets settle through the configured admin. On-chain oracle markets
+   remain fail-closed until the exact `txoracle::validate_stat` CPI is integrated.
 6. 60s finality delay → `confirm_round`
 7. Winners `claim_winnings` from vault
 

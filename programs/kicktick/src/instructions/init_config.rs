@@ -3,12 +3,25 @@
 use anchor_lang::prelude::*;
 
 use crate::constants::*;
+use crate::errors::*;
 use crate::state::*;
 
 #[derive(Accounts)]
 pub struct InitConfig<'info> {
     #[account(mut)]
     pub admin: Signer<'info>,
+
+    #[account(
+        constraint = program.programdata_address()? == Some(program_data.key())
+            @ KicktickError::Unauthorized
+    )]
+    pub program: Program<'info, crate::program::Kicktick>,
+
+    #[account(
+        constraint = program_data.upgrade_authority_address == Some(admin.key())
+            @ KicktickError::Unauthorized
+    )]
+    pub program_data: Account<'info, ProgramData>,
 
     #[account(
         init,

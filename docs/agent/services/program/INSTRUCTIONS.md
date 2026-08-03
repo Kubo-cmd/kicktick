@@ -77,17 +77,20 @@ tags: [instructions, CPI, settlement, accounts]
 | Account | Signer? | Mut? | Details |
 |---------|---------|------|---------|
 | `authority` | ✅ | — | Match authority |
+| `config` | — | — | Config PDA; authority must equal `config.admin` |
 | `match_pda` | — | ✅ | Match PDA |
 | `round` | — | ✅ | `Round` PDA — seeds: `["round", match_pda, round_id LE]` |
 
 **Validation:**
+- Only `PenaltyShot` and `VARCheck` may open while the on-chain oracle settlement
+  path is disabled.
 - `15 <= lock_seconds <= MAX_MARKET_DURATION`
-- `deadline_seconds <= MAX_MARKET_DURATION`
+- `lock_seconds <= deadline_seconds <= MAX_MARKET_DURATION`
 
 **State changes:**
 - `round.status = Open`
 - `round.expires_at = now + deadline_seconds`
-- `round.settlement_model` set from market_type (PenaltyShot/VARCheck = OffChain; else OnChain)
+- `round.settlement_model = OffChain`
 - `match_pda.round_counter++`
 
 ---
@@ -112,7 +115,13 @@ tags: [instructions, CPI, settlement, accounts]
 - `amount > 0`
 - `round.status == Open`
 - `now < round.expires_at`
+- `now < opened_at + lock_seconds`
 - `side <= 2` (0=YES, 1=NO, 2=ABSTAIN)
+- A funded position may only add stake to its existing side
+- New positions carry the current account-layout version in the trailing byte.
+  The byte remains after `claimed`, matching deployed 67-byte accounts whose
+  trailing byte stored the PDA bump. Funded legacy positions cannot accept new
+  bets and are refund-only after their round is cancelled or voided.
 
 **CPI call:** `system_program::transfer(bettor -> match_vault)`
 
@@ -125,14 +134,15 @@ tags: [instructions, CPI, settlement, accounts]
 
 ## 5. `settle_round` (on-chain)
 
-**Purpose:** Settle via CPI to TxOracle `validate_stat`. For binary event markets (YellowCardInWindow, etc.).
+**Purpose:** Reserved on-chain TxOracle settlement path. It currently returns
+`OracleValidationFailed` without changing state because the exact TxOracle IDL and
+Merkle-proof account layout are not present. This is intentionally fail-closed.
 
 **Rust signature:** `pub fn settle_round(ctx: Context<SettleRound>) -> Result<()>`
 
 **Accounts** (`SettleRound`): match_pda, round, txoracle_program, proof accounts, match_vault (for rent exemption).
 
-**State changes:**
-- Sets `round.outcome`, `round.winner`, `round.status = ResolvedPending`
+**State changes:** None until verified CPI integration is implemented.
 
 ---
 
@@ -142,7 +152,15 @@ tags: [instructions, CPI, settlement, accounts]
 
 **Rust signature:** `pub fn settle_offchain_round(ctx: Context<SettleOffchainRound>, outcome: RoundOutcome, winner: u8) -> Result<()>`
 
-**Accounts** (`SettleOffchainRound`): caller (authority), match_pda, round.
+**Accounts** (`SettleOffchainRound`): caller (must equal `config.admin`), config,
+match_pda, round.
+
+**Validation:** The outcome and winner code must agree (`Yes`/`Home` = 1,
+`No`/`Away` = 2, `NoGoal` = 3, `Cancelled` = 0). Off-chain market types
+accept only `Yes`, `No`, or `Cancelled`. Settlement is rejected until the
+configured betting lock time has elapsed. A non-cancelled outcome is also
+rejected when its selected winning side has no stake, preventing an
+unclaimable settled pool.
 
 **State changes:**
 - Sets `round.outcome`, `round.winner`, `round.status = ResolvedPending`
@@ -188,6 +206,10 @@ payout = (position.amount * total_pool) / winning_pool
 ```
 
 - If `round.winner == Some(0)` or `round.outcome == Cancelled`: full `position.amount` refunded.
+- Proportional winner payouts require the current position version. Legacy
+  positions remain deserializable but are ineligible for winner accounting
+  because the pre-upgrade producer could aggregate multiple sides. Their safe
+  migration path is cancellation/void followed by a principal-only refund.
 
 **CPI call:** `system_program::transfer(match_vault -> winner)` with PDA signer `["match_vault", match_key, vault_bump]`
 
@@ -197,7 +219,9 @@ payout = (position.amount * total_pool) / winning_pool
 
 ## 9. `cancel_round`
 
-**Purpose:** Void an open round (admin/authority only).
+**Purpose:** Void an open or locked round. The admin may cancel immediately;
+after `expires_at`, any signer may cancel permissionlessly so refunds cannot be
+blocked forever by an unavailable authority.
 
 **Rust signature:** `pub fn cancel_round(ctx: Context<CancelRound>) -> Result<()>`
 
@@ -220,17 +244,18 @@ payout = (position.amount * total_pool) / winning_pool
 ## Sponsor Instructions
 
 ### `fund_sponsor`
-**Purpose:** Deposit SOL into global `SponsorVault` (PDA `["sponsor_vault"]`). Also transfers to `match_vault`.
+**Purpose:** Reserved sponsor-deposit path. It currently fails closed with
+`SponsorFlowDisabled` so a multi-donor pool cannot accept unrecoverable SOL.
 
 **Rust signature:** `pub fn fund_sponsor(ctx: Context<FundSponsor>, amount: u64) -> Result<()>`
 
 ### `sponsor_round`
-**Purpose:** Allocate sponsor liquidity to a specific round.
+**Purpose:** Reserved sponsor-allocation path; currently fails closed.
 
 **Rust signature:** `pub fn sponsor_round(ctx: Context<SponsorRound>, amount: u64) -> Result<()>`
 
-- Deducts from `sponsor_vault.total_balance`, increments `allocated`.
-- Increments `match_pda.total_sponsored`.
+- No state or SOL changes occur until contribution accounting and recovery semantics
+  are implemented.
 
 ---
 
@@ -238,15 +263,15 @@ payout = (position.amount * total_pool) / winning_pool
 
 | Instruction | Authority | SOL Transfer | PDA Created |
 |-------------|-----------|--------------|-------------|
-| `init_config` | First admin | — | Config |
+| `init_config` | Program upgrade authority | — | Config |
 | `init_match` | Admin | — | Match_, match_vault (system) |
-| `open_round` | Match authority | — | Round |
+| `open_round` | Config admin | — | Round |
 | `place_bet` | Bettor | bettor → match_vault | Position (init_if_needed) |
-| `settle_round` | Caller | — | — |
-| `settle_offchain_round` | Authority | — | — |
+| `settle_round` | Disabled pending verified CPI | — | — |
+| `settle_offchain_round` | Config admin | — | — |
 | `confirm_round` | Anyone | — | — |
 | `claim_winnings` | Winner | match_vault → winner | — |
-| `cancel_round` | Authority | — | — |
-| `challenge_equivocation` | Anyone | — | — |
-| `fund_sponsor` | Sponsor | sponsor → match_vault | SponsorVault (init_if_needed) |
-| `sponsor_round` | Sponsor | — | — |
+| `cancel_round` | Config admin | — | — |
+| `challenge_equivocation` | Config admin | — | — |
+| `fund_sponsor` | Disabled | — | — |
+| `sponsor_round` | Disabled | — | — |

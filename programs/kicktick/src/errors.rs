@@ -21,8 +21,14 @@ pub enum KicktickError {
     RoundNotOpen,
     #[msg("Round has expired")]
     RoundExpired,
+    #[msg("Betting window is locked")]
+    RoundLocked,
+    #[msg("Betting window is still open")]
+    BettingWindowStillOpen,
     #[msg("Invalid side (0=YES, 1=NO, 2=ABSTAIN)")]
     InvalidSide,
+    #[msg("A position cannot change sides within the same round")]
+    PositionSideMismatch,
     #[msg("Invalid winner code (0..=3)")]
     InvalidWinner,
     #[msg("Wrong settlement model for this round")]
@@ -53,4 +59,20 @@ pub enum KicktickError {
     Overflow,
     #[msg("Oracle validation failed")]
     OracleValidationFailed,
+    #[msg("Outcome and winner code do not agree")]
+    OutcomeWinnerMismatch,
+    #[msg("Outcome is invalid for this market type")]
+    InvalidMarketOutcome,
+    #[msg("Position accounting is inconsistent with its winning pool")]
+    InvalidPositionAccounting,
+    #[msg("Position was created by an unsupported program version")]
+    UnsupportedPositionVersion,
+    #[msg("Sponsor flow is disabled until recovery semantics are implemented")]
+    SponsorFlowDisabled,
+    #[msg("Cannot resolve a round to a side with no stake")]
+    EmptyWinningPool,
+    #[msg("On-chain markets are disabled until oracle settlement is implemented")]
+    OnchainSettlementDisabled,
+    #[msg("Only the admin may cancel before the settlement deadline")]
+    CancellationDeadlineNotElapsed,
 }
