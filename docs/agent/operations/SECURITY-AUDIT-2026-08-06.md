@@ -76,6 +76,17 @@ defensible state for Colosseum review.
 4. **INFO — settle_round CPI is the remaining critical-path work.** The
    fail-closed stub must become real `validate_stat` CPI with Merkle-proof
    accounts before on-chain market types can open. Tracked in ROADMAP.
+5. **MEDIUM (economic) — round accounts are never closed.** No `close =`
+   constraint exists in any instruction, so per-round rent (~0.0016 SOL ×
+   Round::LEN) is locked forever. At the relayer's current cadence
+   (rolling window markets re-open immediately after expiry) a 90-min match
+   produces ~86 rounds (66 window + ~20 event-driven) → ~0.14 SOL (~$20)
+   of unrecoverable rent per match, paid by the admin/authority that opened
+   them. Options: (a) add `close_round` after claim-deadline with rent to
+   the match vault or a rent-recovery crank; (b) lengthen window intervals
+   in the relayer (300s → 600s halves window-round count); (c) accept as
+   cost-of-operation for the demo. For Colosseum scope, (c) + documenting
+   the number is sufficient; mainnet needs (a).
 
 ## Refutation pass (adversarial self-check)
 
