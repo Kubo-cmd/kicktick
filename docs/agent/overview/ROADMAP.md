@@ -91,29 +91,29 @@ tags: [roadmap, phases, timeline]
 | Task | Files | Status |
 |------|-------|--------|
 | 2.1.1 `txline-auth.ts` | exists | ✅ |
-| 2.1.2 `txline-client.ts` — SSE parser | new file | ⬜ |
-| 2.1.3 Parse 18 SSE action types | txline-client.ts | ⬜ |
-| 2.1.4 `fixture-watcher.ts` | new file | ⬜ |
+| 2.1.2 `txline-client.ts` — SSE parser | new file | ✅ |
+| 2.1.3 Parse 18 SSE action types | txline-client.ts | ✅ |
+| 2.1.4 `fixture-watcher.ts` | new file | ✅ |
 
 ### Market Logic
 | Task | Status |
 |------|--------|
-| 2.2.1 Event-triggered rules (goal, corner, etc.) | ⬜ |
-| 2.2.2 Cron-triggered rules (GoalInWindow 5min) | ⬜ |
-| 2.2.3 Penalty shootout mode | ⬜ |
-| 2.2.4 Timeout handling | ⬜ |
-| 2.2.5 Retake handling (penalty retake) | ⬜ |
+| 2.2.1 Event-triggered rules (goal, corner, etc.) | ✅ |
+| 2.2.2 Cron-triggered rules (GoalInWindow 5min) | ✅ |
+| 2.2.3 Penalty shootout mode | ✅ |
+| 2.2.4 Timeout handling | ✅ |
+| 2.2.5 Retake handling (penalty retake) | ✅ |
 
 ### Proof & Settlement Crank
 | Task | Status |
 |------|--------|
-| 2.3.1 `proof-gatherer.ts` | ⬜ |
-| 2.3.2 `crank.ts` — build + send tx | ⬜ |
-| 2.3.3 Off-chain settlement (PenaltyShot/VARCheck) | ⬜ |
-| 2.3.4 `ws-server.ts` — WebSocket for frontend | ⬜ |
-| 2.3.5 `index.ts` — main loop wiring | ⬜ (placeholder exists) |
+| 2.3.1 `proof-gatherer.ts` | ✅ |
+| 2.3.2 `crank.ts` — build + send tx | ✅ |
+| 2.3.3 Off-chain settlement (PenaltyShot/VARCheck) | ✅ |
+| 2.3.4 `ws-server.ts` — WebSocket for frontend | ✅ |
+| 2.3.5 `index.ts` — main loop wiring | ✅ |
 
-**MVP Gate:** Relayer auto-opens and auto-settles rounds for a live match feed.
+**MVP Gate:** Relayer auto-opens and auto-settles rounds for a live match feed. ✅ (verified via replay harness — f58cd72)
 
 ---
 
@@ -122,9 +122,9 @@ tags: [roadmap, phases, timeline]
 | Task | Status |
 |------|--------|
 | 3.1 Load historical match data | ⬜ |
-| 3.2 Replay at 30x speed | ⬜ |
-| 3.3 Slow lane 1x mode | ⬜ |
-| 3.4 All 8 market types firing | ⬜ |
+| 3.2 Replay at 30x speed | ✅ (replay.ts speed=N) |
+| 3.3 Slow lane 1x mode | ✅ (speed=1) |
+| 3.4 All 8 market types firing | ✅ (7 tests, 17/17 green) |
 | 3.5 Demo script & fallback video | ⬜ |
 
 **Final Gate:** 15-20 rounds settle in 3 minutes via 30x replay.
@@ -137,8 +137,8 @@ tags: [roadmap, phases, timeline]
 |-------|------|-------|-------------|--------|
 | 0 — Spike | 2 | 8-12 | TxLINE access | ✅ Done |
 | 1 — Anchor Program | 5 | 30-40 | Phase 0 | ✅ Done |
-| 2 — Relayer | 4 | 24-32 | Phase 1 (crank) | ⏳ |
-| 3 — Replay/Demo | 4 | 16-20 | Phase 2 | ⏳ |
+| 2 — Relayer | 4 | 24-32 | Phase 1 (crank) | ✅ Done |
+| 3 — Replay/Demo | 4 | 16-20 | Phase 2 | ⏳ In progress |
 | **Buffer** | **3** | — | — | ⏳ Jul 16-19 |
 
 ---
