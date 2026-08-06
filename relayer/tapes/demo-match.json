@@ -1,0 +1,219 @@
+[
+ {
+  "atMs": 0,
+  "data": {
+   "Action": "status",
+   "StatusId": 2
+  }
+ },
+ {
+  "atMs": 396027,
+  "data": {
+   "Action": "corner",
+   "Participant": 1
+  }
+ },
+ {
+  "atMs": 614203,
+  "data": {
+   "Action": "corner",
+   "Participant": 1
+  }
+ },
+ {
+  "atMs": 993771,
+  "data": {
+   "Action": "corner",
+   "Participant": 1
+  }
+ },
+ {
+  "atMs": 1232155,
+  "data": {
+   "Action": "corner",
+   "Participant": 1
+  }
+ },
+ {
+  "atMs": 1491323,
+  "data": {
+   "Action": "corner",
+   "Participant": 1
+  }
+ },
+ {
+  "atMs": 1749995,
+  "data": {
+   "Action": "corner",
+   "Participant": 1
+  }
+ },
+ {
+  "atMs": 1979259,
+  "data": {
+   "Action": "corner",
+   "Participant": 1
+  }
+ },
+ {
+  "atMs": 2425115,
+  "data": {
+   "Action": "goal",
+   "Participant": 1,
+   "GoalType": "Regular"
+  }
+ },
+ {
+  "atMs": 2891899,
+  "data": {
+   "Action": "goal",
+   "Participant": 1,
+   "GoalType": "Regular"
+  }
+ },
+ {
+  "atMs": 3175195,
+  "data": {
+   "Action": "yellow_card",
+   "Participant": 1
+  }
+ },
+ {
+  "atMs": 3645691,
+  "data": {
+   "Action": "yellow_card",
+   "Participant": 1
+  }
+ },
+ {
+  "atMs": 3921979,
+  "data": {
+   "Action": "yellow_card",
+   "Participant": 1
+  }
+ },
+ {
+  "atMs": 4041979,
+  "data": {
+   "Action": "status",
+   "StatusId": 3
+  }
+ },
+ {
+  "atMs": 4941979,
+  "data": {
+   "Action": "status",
+   "StatusId": 4
+  }
+ },
+ {
+  "atMs": 5173467,
+  "data": {
+   "Action": "corner",
+   "Participant": 1
+  }
+ },
+ {
+  "atMs": 5535083,
+  "data": {
+   "Action": "corner",
+   "Participant": 1
+  }
+ },
+ {
+  "atMs": 5834011,
+  "data": {
+   "Action": "corner",
+   "Participant": 1
+  }
+ },
+ {
+  "atMs": 6053403,
+  "data": {
+   "Action": "corner",
+   "Participant": 1
+  }
+ },
+ {
+  "atMs": 6273291,
+  "data": {
+   "Action": "corner",
+   "Participant": 1
+  }
+ },
+ {
+  "atMs": 6552923,
+  "data": {
+   "Action": "corner",
+   "Participant": 1
+  }
+ },
+ {
+  "atMs": 7124203,
+  "data": {
+   "Action": "goal",
+   "Participant": 2,
+   "GoalType": "Regular"
+  }
+ },
+ {
+  "atMs": 7739579,
+  "data": {
+   "Action": "goal",
+   "Participant": 1,
+   "GoalType": "Regular"
+  }
+ },
+ {
+  "atMs": 8055147,
+  "data": {
+   "Action": "yellow_card",
+   "Participant": 1
+  }
+ },
+ {
+  "atMs": 8341819,
+  "data": {
+   "Action": "yellow_card",
+   "Participant": 1
+  }
+ },
+ {
+  "atMs": 8521819,
+  "data": {
+   "Action": "var",
+   "Participant": 1,
+   "VarType": "Goal"
+  }
+ },
+ {
+  "atMs": 8566819,
+  "data": {
+   "Action": "var_end",
+   "Participant": 1,
+   "Outcome": "Overturned"
+  }
+ },
+ {
+  "atMs": 8766819,
+  "data": {
+   "Action": "penalty",
+   "Participant": 2
+  }
+ },
+ {
+  "atMs": 8791819,
+  "data": {
+   "Action": "penalty_outcome",
+   "Participant": 2,
+   "Outcome": "Scored"
+  }
+ },
+ {
+  "atMs": 8911819,
+  "data": {
+   "Action": "status",
+   "StatusId": 5
+  }
+ }
+]
