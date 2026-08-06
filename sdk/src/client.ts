@@ -1,4 +1,5 @@
-// KickTick Client — High-level API
+// KickTick Client — high-level API over the audited instruction builders
+// (signatures synced 2026-08-06; all ids are numeric fixture/round ids).
 
 import { Connection, PublicKey, Keypair, Transaction } from '@solana/web3.js';
 import { PROGRAM_ID } from './constants';
@@ -13,124 +14,60 @@ export class KickTickClient {
     public programId: PublicKey = new PublicKey(PROGRAM_ID)
   ) {}
 
-  // Config
-  async getConfig(): Promise<Config | null> {
-    return accounts.fetchConfig(this.connection);
+  // Reads
+  getConfig(): Promise<Config | null> {
+    return accounts.fetchConfig(this.connection, this.programId);
+  }
+  getMatch(fixtureId: bigint | number): Promise<Match_ | null> {
+    return accounts.fetchMatch(this.connection, fixtureId, this.programId);
+  }
+  getRound(fixtureId: bigint | number, roundId: bigint | number): Promise<Round | null> {
+    return accounts.fetchRound(this.connection, fixtureId, roundId, this.programId);
+  }
+  getPosition(fixtureId: bigint | number, roundId: bigint | number, owner: PublicKey): Promise<Position | null> {
+    return accounts.fetchPosition(this.connection, fixtureId, roundId, owner, this.programId);
   }
 
-  // Matches
-  async getMatch(fixtureId: string): Promise<Match_ | null> {
-    return accounts.fetchMatch(this.connection, fixtureId);
+  // Writes
+  async initMatch(admin: Keypair, fixtureId: bigint | number, homeTeam: string, awayTeam: string): Promise<string> {
+    return this.sendTx(new Transaction().add(
+      instructions.buildInitMatch(admin.publicKey, fixtureId, homeTeam, awayTeam, this.programId)), [admin]);
+  }
+  async openRound(admin: Keypair, fixtureId: bigint | number, roundId: bigint | number, marketType: number, lockSeconds: number, deadlineSeconds: number): Promise<string> {
+    return this.sendTx(new Transaction().add(
+      instructions.buildOpenRound(admin.publicKey, fixtureId, roundId, marketType, lockSeconds, deadlineSeconds, this.programId)), [admin]);
+  }
+  async placeBet(bettor: Keypair, fixtureId: bigint | number, roundId: bigint | number, side: number, amount: bigint | number): Promise<string> {
+    return this.sendTx(new Transaction().add(
+      instructions.buildPlaceBet(bettor.publicKey, fixtureId, roundId, side, amount, this.programId)), [bettor]);
+  }
+  async settleOffchainRound(caller: Keypair, fixtureId: bigint | number, roundId: bigint | number, outcome: number, winner: number): Promise<string> {
+    return this.sendTx(new Transaction().add(
+      instructions.buildSettleOffchainRound(caller.publicKey, fixtureId, roundId, outcome, winner, this.programId)), [caller]);
+  }
+  async confirmRound(caller: Keypair, fixtureId: bigint | number, roundId: bigint | number): Promise<string> {
+    return this.sendTx(new Transaction().add(
+      instructions.buildConfirmRound(caller.publicKey, fixtureId, roundId, this.programId)), [caller]);
+  }
+  async claimWinnings(claimer: Keypair, fixtureId: bigint | number, roundId: bigint | number): Promise<string> {
+    return this.sendTx(new Transaction().add(
+      instructions.buildClaimWinnings(claimer.publicKey, fixtureId, roundId, this.programId)), [claimer]);
+  }
+  async refundBet(bettor: Keypair, fixtureId: bigint | number, roundId: bigint | number): Promise<string> {
+    return this.sendTx(new Transaction().add(
+      instructions.buildRefundBet(bettor.publicKey, fixtureId, roundId, this.programId)), [bettor]);
+  }
+  async cancelRound(authority: Keypair, fixtureId: bigint | number, roundId: bigint | number): Promise<string> {
+    return this.sendTx(new Transaction().add(
+      instructions.buildCancelRound(authority.publicKey, fixtureId, roundId, this.programId)), [authority]);
+  }
+  async challengeEquivocation(caller: Keypair, fixtureId: bigint | number, roundId: bigint | number): Promise<string> {
+    return this.sendTx(new Transaction().add(
+      instructions.buildChallengeEquivocation(caller.publicKey, fixtureId, roundId, this.programId)), [caller]);
   }
 
-  async initMatch(
-    admin: Keypair,
-    fixtureId: string,
-    homeTeam: string,
-    awayTeam: string
-  ): Promise<string> {
-    const ix = instructions.buildInitMatch(admin.publicKey, fixtureId, homeTeam, awayTeam);
-    const tx = new Transaction().add(ix);
-    return this.sendTx(tx, [admin]);
-  }
-
-  // Rounds
-  async getRound(match: PublicKey, roundId: number): Promise<Round | null> {
-    return accounts.fetchRound(this.connection, match, roundId);
-  }
-
-  async openRound(
-    admin: Keypair,
-    match: PublicKey,
-    roundId: number,
-    marketType: number,
-    lockSeconds: number,
-    deadlineSeconds: number
-  ): Promise<string> {
-    const ix = instructions.buildOpenRound(admin.publicKey, match, roundId, marketType, lockSeconds, deadlineSeconds);
-    const tx = new Transaction().add(ix);
-    return this.sendTx(tx, [admin]);
-  }
-
-  async confirmRound(
-    admin: Keypair,
-    match: PublicKey,
-    round: PublicKey,
-    outcome: number
-  ): Promise<string> {
-    const ix = instructions.buildConfirmRound(admin.publicKey, match, round, outcome);
-    const tx = new Transaction().add(ix);
-    return this.sendTx(tx, [admin]);
-  }
-
-  async cancelRound(
-    admin: Keypair,
-    match: PublicKey,
-    round: PublicKey
-  ): Promise<string> {
-    const ix = instructions.buildCancelRound(admin.publicKey, match, round);
-    const tx = new Transaction().add(ix);
-    return this.sendTx(tx, [admin]);
-  }
-
-  // Betting
-  async placeBet(
-    bettor: Keypair,
-    match: PublicKey,
-    round: PublicKey,
-    fixtureId: string,
-    roundId: number,
-    side: number,
-    amount: number
-  ): Promise<string> {
-    const ix = instructions.buildPlaceBet(bettor.publicKey, match, round, fixtureId, roundId, side, amount);
-    const tx = new Transaction().add(ix);
-    return this.sendTx(tx, [bettor]);
-  }
-
-  async claimWinnings(
-    claimer: Keypair,
-    match: PublicKey,
-    round: PublicKey,
-    fixtureId: string,
-    roundId: number
-  ): Promise<string> {
-    const ix = instructions.buildClaimWinnings(claimer.publicKey, match, round, fixtureId, roundId);
-    const tx = new Transaction().add(ix);
-    return this.sendTx(tx, [claimer]);
-  }
-
-  async refundBet(
-    bettor: Keypair,
-    match: PublicKey,
-    round: PublicKey,
-    fixtureId: string,
-    roundId: number
-  ): Promise<string> {
-    const ix = instructions.buildRefundBet(bettor.publicKey, match, round, fixtureId, roundId);
-    const tx = new Transaction().add(ix);
-    return this.sendTx(tx, [bettor]);
-  }
-
-  // Positions
-  async getPosition(round: PublicKey, owner: PublicKey): Promise<Position | null> {
-    return accounts.fetchPosition(this.connection, round, owner);
-  }
-
-  // Sponsor
-  async fundSponsor(
-    sponsor: Keypair,
-    match: PublicKey,
-    amount: number
-  ): Promise<string> {
-    const ix = instructions.buildFundSponsor(sponsor.publicKey, match, amount);
-    const tx = new Transaction().add(ix);
-    return this.sendTx(tx, [sponsor]);
-  }
-
-  // Utility
   private async sendTx(tx: Transaction, signers: Keypair[]): Promise<string> {
-    tx.feePayer = signers[0].publicKey;
+    tx.feePayer = signers[0]!.publicKey;
     const { blockhash } = await this.connection.getLatestBlockhash();
     tx.recentBlockhash = blockhash;
     tx.sign(...signers);
@@ -142,6 +79,7 @@ export class KickTickClient {
   // PDA helpers
   static findConfigPda = pda.findConfigPda;
   static findMatchPda = pda.findMatchPda;
+  static findMatchVaultPda = pda.findMatchVaultPda;
   static findRoundPda = pda.findRoundPda;
   static findPositionPda = pda.findPositionPda;
   static findSponsorVaultPda = pda.findSponsorVaultPda;

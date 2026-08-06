@@ -1,64 +1,62 @@
-// KickTick Program Types
+// KickTick Program Types — layouts verified against programs/kicktick/src/state
+// (audit 2026-08-06). Offsets are Borsh/Anchor with the 8-byte discriminator.
 
 export interface Config {
-  admin: string;
-  treasury: string;
-  fee_bps: number;
-  min_bet: number;
-  max_bet: number;
-  bump: number;
+  admin: string;                    // 8..40
+  txoracleProgramId: string;        // 40..72
+  dailyScoresMerkleRoots: string;   // 72..104
+  finalityDelay: bigint;            // 104..112 (i64)
+  minLiquidity: bigint;             // 112..120 (u64)
+  bump: number;                     // 120
 }
 
 export interface Match_ {
-  fixture_id: string;
-  home_team: string;
-  away_team: string;
-  status: number;
-  start_time: number;
-  end_time: number;
-  home_score: number;
-  away_score: number;
-  bump: number;
+  fixtureId: bigint;      // 8..16
+  status: number;         // 16
+  homeTeam: string;       // 17..  (4-byte len + bytes, max 64)
+  awayTeam: string;
+  competitionId: number;  // i32
+  vaultBump: number;
+  roundCounter: bigint;
+  totalDeposited: bigint;
+  totalSponsored: bigint;
+  createdAt: bigint;
 }
 
 export interface Round {
-  match: string;
-  round_id: number;
-  market_type: number;
-  status: number;
-  lock_time: number;
-  deadline: number;
-  total_pool: number;
-  home_pool: number;
-  away_pool: number;
-  draw_pool: number;
-  outcome: number;
-  bump: number;
+  matchPda: string;       // 8..40
+  roundId: bigint;        // 40..48
+  marketType: number;     // 48
+  lockSeconds: bigint;    // 49..57 (params)
+  deadlineSeconds: bigint;// 57..65
+  settlementModel: number;// 65 (0=OnChain, 1=OffChain)
+  status: number;         // 66
+  outcome: number;        // 67
+  totalYes: bigint;       // 68..76
+  totalNo: bigint;        // 76..84
+  totalAbstain: bigint;   // 84..92
+  expiresAt: bigint;      // 92..100
+  settleAt: bigint;       // 100..108
+  winner: number | null;  // 108..110 (Option<u8>)
+  claimed: boolean;       // 110
+  bump: number;           // 111
 }
 
 export interface Position {
-  owner: string;
-  round: string;
-  side: number;
-  amount: number;
-  claimed: boolean;
-  bump: number;
+  owner: string;      // 8..40
+  fixtureId: bigint;  // 40..48
+  roundId: bigint;    // 48..56
+  side: number;       // 56
+  amount: bigint;     // 57..65
+  claimed: boolean;   // 65
+  version: number;    // 66 (2 = current; legacy bump byte tolerated)
 }
 
 export interface SponsorVault {
-  match: string;
-  amount: number;
   bump: number;
 }
 
 export interface RoundParams {
-  round_id: number;
-  market_type: number;
-  lock_seconds: number;
-  deadline_seconds: number;
+  lockSeconds: bigint;
+  deadlineSeconds: bigint;
 }
-
-export type MarketType = 0 | 1 | 2;
-export type RoundStatus = 0 | 1 | 2 | 3;
-export type MatchStatus = 0 | 1 | 2 | 3;
-export type RoundOutcome = 0 | 1 | 2; // 0=Home, 1=Away, 2=Draw

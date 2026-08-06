@@ -6,12 +6,15 @@
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "vitest run"
   },
   "dependencies": {
     "@solana/web3.js": "^1.87.0"
   },
   "devDependencies": {
-    "typescript": "^5.4.0"
+    "@types/node": "^22.20.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.0",
+    "vitest": "^2.1.9"
   }
 }
