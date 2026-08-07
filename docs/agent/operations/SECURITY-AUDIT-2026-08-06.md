@@ -105,3 +105,17 @@ defensible state for Colosseum review.
   `programs/kicktick/src/**/tests`, c9adc73 (Monte Carlo), scripts/
   audit-legacy-solvency.mjs.
 - This audit: manual read 2026-08-06, cargo test 14/14, relayer 25/25.
+
+---
+
+## Addendum — Live localnet smoke (2026-08-06, post-audit)
+
+Copy-harness E2E executed per solana-anchor-toolchain-fix protocol:
+harness copy of the program with declare_id patched to the local deploy
+keypair (CYsfi63w…), `cargo build-sbf --arch v3` (EM_BPF 247 verified),
+deployed to a local solana-test-validator 4.1.1, relayer booted against it.
+
+Result: **SMOKE_PASS** — ANCHOR_IDL_LOADED (executable=true), relayer
+runtime started, WS welcome contract served (`{"version":"0.1.0"}`).
+Committed source verified pristine after (declare_id canonical, IDL
+address restored, harness + ledger wiped).
