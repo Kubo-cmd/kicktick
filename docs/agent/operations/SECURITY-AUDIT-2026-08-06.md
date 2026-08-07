@@ -119,3 +119,26 @@ Result: **SMOKE_PASS** — ANCHOR_IDL_LOADED (executable=true), relayer
 runtime started, WS welcome contract served (`{"version":"0.1.0"}`).
 Committed source verified pristine after (declare_id canonical, IDL
 address restored, harness + ledger wiped).
+
+---
+
+## Addendum 2 — SDK adversarial verification (2026-08-06)
+
+Fresh-eyes verification of the SDK rewrite (6cb52e3) using
+reviewer-context-hygiene method: checks derived from the Rust source of
+truth, not from the implementation's claims.
+
+- PDAs: all six (config, match, match_vault, round, position,
+  sponsor_vault) independently recomputed from the Rust `seeds = [...]`
+  recipes via raw web3.js and compared against `sdk/dist/pda.js` output —
+  byte-identical (fixture 777, round 5).
+- Account order + signer/writable flags: all 8 instruction structs diffed
+  against their Rust `#[derive(Accounts)]` field order — exact match
+  (init_config, init_match, open_round, place_bet, settle_offchain_round,
+  confirm_round, claim, cancel_round).
+- Discriminators: all 10 instruction discriminators verified as real Anchor
+  sighashes (sha256("global:<name>")[0..8]), no placeholders.
+- Deserialization offsets in accounts.ts match the Round/Position/Config/
+  Match_ struct layouts field-by-field (verified against state/*.rs).
+
+Verdict: PASS on all six SDK files.
