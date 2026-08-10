@@ -1,205 +1,128 @@
-# KickTick: Sub-Minute Micro Prediction Markets on Solana
+# KickTick — Sub-Minute Micro Prediction Markets on Solana
 
-Create prediction markets in **under 60 seconds** from live TxODDS odds data. Off-chain and replay settlement are implemented; the on-chain `txoracle::validate_stat` CPI path remains fail-closed until its authoritative account layout is integrated.
-
-**World Cup Hackathon** — Superteam × Solana, powered by TxODDS
-
-## Market Types
-
-| Type | Description | Settlement |
-|------|-------------|------------|
-| `next_goal` | Which team scores next? | CPI (ternary: home/away/draw) |
-| `next_goal_side` | Will next goal be by home team? | CPI (ternary) |
-| `goal_in_window` | Goal in next N minutes? | CPI (binary) |
-| `next_corner` | Corner in next 5 min? | CPI (binary) |
-| `next_card` | Card in next 5 min? | CPI (binary) |
-| `over_under_corners` | Corners threshold in window? | CPI (binary) |
-| `penalty_shootout` | Penalty round outcome | CPI + off-chain fallback |
-| `var_check` | VAR overturn? | Off-chain (relayer) |
-
-## Key Features
-
-- **Native SOL** betting — no SPL tokens for wagers
-- **Fail-closed oracle path** — `settle_round` rejects settlement until the exact
-  `txoracle::validate_stat` CPI account layout is integrated
-- **Off-chain settlement** — `settle_offchain_round` for PenaltyShot/VARCheck
-- **Sub-minute markets** — 15s lock, 60s finality delay, 15–300s duration
-- **Event-driven** — SSE from TxLINE triggers market creation and settlement
-- **PDA vaults** — MatchVault (system-owned), Position tracking, SponsorVault
+Settle prediction markets in under 60 seconds. Built for the Superteam World Cup
+hackathon (Prediction Markets & Settlement track, $18K USDT).
 
 ## Architecture
 
 ```
-                    TxLINE API (txline-dev.txodds.com)
-                 ┌──────────────────────────────────┐
-                 │  Guest JWT + API token            │
-                 │  SSE odds/scores streams          │
-                 │  REST stat-validation (Merkle)    │
-                 └─────────────┬────────────────────┘
-                               │
-                               ▼
-┌──────────────────────────────────────────────────────┐
-│  RELAYER (Node/TS — off-chain crank, no DB)           │
-│                                                       │
-│  txline-auth → SSE parser → fixture-watcher          │
-│  market-trigger (rules engine)                       │
-│  proof-gatherer → crank (build+sign+send tx)         │
-│  ws-server → WebSocket to frontend                   │
-└──────────┬───────────────────────────────────────────┘
-           │ settlement tx              │ WebSocket
-           ▼                            ▼
-┌─────────────────────┐    ┌─────────────────────────┐
-│ Solana Devnet       │    │ Frontend (Vite + React) │
-│                     │    │                         │
-│ kicktick program    │    │ Wallet (Phantom/Solf)  │
-│  init_config        │    │ MarketCard (bet UI)     │
-│  init_match         │    │ CreateMarketModal       │
-│  open_round         │    │ LiveOddsFeed            │
-│  place_bet          │    │                         │
-│  settle_round (guard)│    └─────────────────────────┘
-│  settle_offchain    │
-│  confirm_round      │
-│  claim_winnings     │
-│  cancel_round       │
-│  challenge_equivoc. │
-│                     │
-│ txoracle program    │
-│  CPI pending IDL    │
-└─────────────────────┘
+┌──────────┐     ┌──────────┐     ┌──────────┐
+│  Safari  │────▶│  Relayer │────▶│  Solana  │
+│  (React) │     │  (Node)  │     │ (Anchor) │
+│  :5173   │◀────│  :3001   │◀────│  :8899   │
+└──────────┘     └──────────┘     └──────────┘
+     │                                │
+     └──────── SDK (client) ──────────┘
 ```
 
-## Repository Structure
-
-```
-kicktick/
-├── README.md
-├── AGENTS.md                    # Agent instructions (copy of docs/agent/AGENTS.md)
-├── setup-local.sh               # Local environment setup
-├── docker-compose.yml           # Dev orchestration
-├── docker-compose.prod.yml      # Prod orchestration
-├── simulation.js                # Pure logic sim (22 tests, no chain)
-├── scripts/
-│   ├── build.sh                 # Docker build [all|contracts|frontend|relayer]
-│   └── deploy.sh                # Deploy [devnet|mainnet]
-├── docs/agent/                  # Full agent documentation
-├── kicktick/                    # Anchor workspace
-│   ├── Anchor.toml
-│   ├── programs/kicktick/src/   # On-chain program (Rust)
-│   ├── tests/                   # Integration tests
-│   └── scripts/                 # Anchor scripts
-├── relayer/                     # Off-chain crank (Node/TS)
-│   ├── src/
-│   │   ├── clients/             # Anchor + TxLINE clients
-│   │   ├── market/              # Fixture watcher + triggers
-│   │   ├── settlement/          # Proof gatherer + crank
-│   │   ├── api/ws-server.ts     # WS to frontend
-│   │   ├── config.ts
-│   │   └── index.ts
-│   ├── tests/
-│   └── package.json
-└── frontend/                    # Vite + React UI
-    ├── src/                     # App, pages, components
-    ├── index.html
-    └── package.json
-```
+- **Program**: Anchor on Solana — `initMatch`, `openRound`, `placeBet`, `settleMarket`
+- **Relayer**: TypeScript — TxODDS oracle integration, 30 unit tests
+- **Frontend**: React + Vite + Solana wallet adapter
+- **SDK**: Browser-compatible client with Web Crypto (no Node.js deps)
 
 ## Quick Start
 
-```bash
-# 1. Clone and setup
-git clone https://github.com/Kubo-cmd/kicktick.git
-cd kicktick
-./setup-local.sh
+### Prerequisites
 
-# 2. Configure wallet (devnet)
-solana-keygen new --outfile ~/.config/solana/id.json
-solana airdrop 2
+- Solana CLI 4.1.1+ (matching platform-tools v1.54)
+- Rust + Anchor CLI 0.31+
+- Node.js 18+
 
-# 3. Build all services
-./scripts/build.sh all dev
-
-# 4. Deploy program to devnet
-./scripts/deploy.sh devnet
-
-# 5. Start frontend
-cd frontend && npm run dev
-```
-
-## Build & Deploy
+### 1. Start Local Validator
 
 ```bash
-# Build Docker images
-./scripts/build.sh [all|contracts|frontend|relayer] [dev|prod]
-
-# Deploy to devnet (auto-builds contracts if needed)
-./scripts/deploy.sh [devnet|mainnet] [priority_fee]
+solana-test-validator \
+  --ledger /tmp/kicktick-ledger \
+  --dynamic-port-range 18000-18200 \
+  --gossip-port 18001
 ```
 
-Deployment info saved to `deployment-{network}.json`.
+### 2. Build & Deploy Program
 
-## Program IDs (Devnet)
+```bash
+# Build with v3 arch for local validator compatibility
+cargo build-sbf --arch v3
 
-| Component | Address |
-|-----------|---------|
-| KickTick program | `a9G9tTEmeALLBi2zf7zR4adbpR4U1N3r6cgRtZUV3o2` |
-| TxOracle program | `6pW64gN1s2uqjHkn1unFeEjAwJkPGHoppGvS715wyP2J` |
-| TxL mint (Token-2022) | `4Zao8ocPhmMgq7PdsYWyxvqySMGx7xb9cMftPMkEokRG` |
-| USDT mint (Token) | `ELWTKspHKCnCfCiCiqYw1EDH77k8VCP74dK9qytG2Ujh` |
+# Airdrop and deploy
+solana airdrop 5
+solana program deploy target/deploy/kicktick.so
+```
 
-## On-Chain Config
+### 3. Update Program ID (if needed)
 
-| Parameter | Value |
-|-----------|-------|
-| Min market duration | 15 seconds |
-| Max market duration | 300 seconds (5 min) |
-| Finality delay | 60 seconds |
-| Default lock | 15 seconds |
-| Min round liquidity | 0.01 SOL |
-| CPI compute units | 1,400,000 |
+The deploy keypair generates a unique program ID. Sync it:
 
-## Market Lifecycle
+```bash
+anchor keys sync       # updates declare_id! in lib.rs
+# OR update manually in:
+#   - programs/kicktick/src/lib.rs  → declare_id!("...")
+#   - Anchor.toml [programs.localnet]
+#   - frontend/src/lib/constants.ts
+#   - relayer/src/config.ts
+```
 
-1. Relayer detects match event via SSE (goal, corner, card, etc.)
-2. `open_round` — market opens with specified duration
-3. Users place YES/NO bets (native SOL)
-4. Betting locks after `lock_seconds`; the round deadline remains the hard expiry
-5. Off-chain markets settle through the configured admin. On-chain oracle markets
-   remain fail-closed until the exact `txoracle::validate_stat` CPI is integrated.
-6. 60s finality delay → `confirm_round`
-7. Winners `claim_winnings` from vault
+### 4. Relayer
 
-## Development Status
+```bash
+cd relayer
+npm install
+npm test          # 30 tests
+npm run dev       # start:3001
+```
 
-| Phase | Description | Status |
-|-------|-------------|--------|
-| 0 | TxLINE auth, CPI spike test, token verification | ✅ Done |
-| 1 | Anchor program (10 instructions, 5 PDAs, native SOL) | ✅ Done |
-| 2 | Relayer SSE parser, market triggers, crank, WebSocket | ✅ Done (core modules) |
-| 3 | Logic sim + Docker/Vite UI | ✅ Done (22/22 sim) |
-| 4 | Live demo polish + Superteam submission pack | ⏳ In progress |
+### 5. Frontend
 
-**Track:** Prediction Markets and Settlement ($18k USDT) — Superteam World Cup · deadline 2026-07-19
+```bash
+cd frontend
+npm install
+npm run dev       # :5173
+```
 
-**Submit:** live MVP link · demo video · public repo `https://github.com/Kubo-cmd/kicktick`
+### 6. Open Browser
 
-## Security
+[http://127.0.0.1:5173](http://127.0.0.1:5173)
 
-- On-chain oracle settlement fails closed until the authoritative TxODDS IDL and account layout are available and `txoracle::validate_stat` CPI validation is integrated; off-chain settlement uses the configured admin path
-- PDA-controlled vaults (no privileged withdrawal keys)
-- Strict duration + overflow checks on-chain
-- Equivocation challenge mechanism
-- Finality delay before confirmation
+Connect Phantom/Solflare wallet, create markets, open rounds, place bets.
 
-## Documentation
+## Deploy to Devnet
 
-Full agent documentation in `docs/agent/`:
+```bash
+solana config set --url devnet
+solana airdrop 5
+anchor deploy
+```
+
+Requires a devnet wallet with SOL. Devnet faucet at faucet.solana.com.
+
+## Project Structure
 
 ```
-docs/agent/overview/    → Project context, architecture, roadmap
-docs/agent/services/    → Program, relayer, frontend deep docs
-docs/agent/integration/ → Data flow, dependencies, environment
-docs/agent/operations/  → Workflows, troubleshooting
+kicktick/
+├── programs/kicktick/   # Anchor program (Rust)
+│   └── src/lib.rs       # initMatch, openRound, placeBet, settleMarket
+├── relayer/             # TypeScript settlement oracle
+│   └── src/
+│       ├── services/    # TxODDS integration
+│       ├── solana/      # Program interaction
+│       └── websocket/   # Frontend relay
+├── frontend/            # React + Vite + Tailwind
+│   └── src/
+│       ├── admin/       # AdminMatchDetail (openRound wired)
+│       ├── components/  # CreateMarketModal (initMatch wired)
+│       └── lib/         # Wallet context, constants, SDK client
+├── sdk/src/             # TypeScript client library
+└── docker/              # Docker Compose deployment
 ```
+
+## Status (2026-08-10)
+
+| Component | Status |
+|-----------|--------|
+| Anchor program | Builds, deploys to localnet |
+| Relayer | 30/30 tests passing |
+| Frontend | Builds, wallet-connected, TODOs resolved |
+| SDK client | Browser-compatible, Web Crypto |
+| Devnet deployment | Blocked by faucet rate limit |
 
 ## License
 

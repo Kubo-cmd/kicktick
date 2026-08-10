@@ -1,9 +1,10 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Connection, PublicKey } from '@solana/web3.js';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { CONFIG } from '@/lib/constants';
 import { useWs, WsServerMessage } from './WebSocketProvider';
+import { KickTickClient } from '@/lib/sdkClient';
 
 const RPC_URL = CONFIG.rpcUrl;
 const PROGRAM_ID = new PublicKey(CONFIG.kicktickProgramId);
@@ -18,7 +19,7 @@ export default function AdminMatchDetail() {
   const { fixtureId } = useParams<{ fixtureId: string }>();
   const fid = Number(fixtureId);
   const { messages, subscribeMatch, unsubscribeMatch } = useWs();
-  const { publicKey } = useWallet();
+  const { publicKey, signTransaction, sendTransaction } = useWallet();
   const [matchData, setMatchData] = useState<{ fixtureId: number; address: string; exists: boolean } | null>(null);
   const [loading, setLoading] = useState(true);
   const [showOpenRound, setShowOpenRound] = useState(false);
@@ -59,6 +60,39 @@ export default function AdminMatchDetail() {
       unsubscribeMatch(fid);
     };
   }, [fid]);
+
+  const handleOpenRound = useCallback(async () => {
+    if (!publicKey || !signTransaction || !sendTransaction) {
+      alert('Connect your wallet first');
+      return;
+    }
+    try {
+      const conn = new Connection(RPC_URL, 'confirmed');
+      const walletAdapter = {
+        publicKey,
+        signTransaction,
+        signAllTransactions: async (txs: any[]) => {
+          const signed: any[] = [];
+          for (const tx of txs) signed.push(await signTransaction(tx));
+          return signed;
+        },
+      } as any;
+      const client = new KickTickClient(conn, walletAdapter as any);
+      const marketTypeNum = openRoundForm.marketType === 'NextGoalSide' ? 0 : 1;
+      const txSig = await client.openRound(
+        fid,
+        openRoundForm.roundId,
+        marketTypeNum,
+        openRoundForm.lockSeconds,
+        openRoundForm.deadlineSeconds,
+      );
+      console.log('openRound tx:', txSig);
+      setShowOpenRound(false);
+    } catch (err: any) {
+      console.error('openRound failed:', err);
+      alert(`Transaction failed: ${err.message}`);
+    }
+  }, [fid, publicKey, signTransaction, sendTransaction, openRoundForm]);
 
   type MatchStateMsg = Extract<WsServerMessage, { type: 'match_state' }>;
   const wsMatchState = useMemo(() => {
@@ -269,10 +303,7 @@ export default function AdminMatchDetail() {
                 </div>
               </div>
               <div className="flex gap-3 pt-2">
-                <button className="btn-primary text-sm flex-1" onClick={() => {
-                  alert(`TODO: call openRound(fixture=${fid}, marketType=${openRoundForm.marketType}, roundId=${openRoundForm.roundId})`);
-                  setShowOpenRound(false);
-                }}>Open Round</button>
+                <button className="btn-primary text-sm flex-1" onClick={handleOpenRound}>Open Round</button>
                 <button className="btn-secondary text-sm" onClick={() => setShowOpenRound(false)}>Cancel</button>
               </div>
             </div>
