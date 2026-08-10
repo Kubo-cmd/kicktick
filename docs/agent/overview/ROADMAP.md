@@ -51,7 +51,7 @@ tags: [roadmap, phases, timeline]
 | 1.2.1 `init_match` + `fund_sponsor` | 1.1.2 | ✅ |
 | 1.2.2 `open_round` with MarketType validation | 1.1.3 | ✅ |
 | 1.2.3 `place_bet` (SOL, no SPL token) | 1.1.4 | ✅ |
-| 1.2.4 `settle_round` (on-chain CPI) | 1.1.3 | ✅ |
+| 1.2.4 `settle_round` (on-chain CPI) | 1.1.3 | ⛔ Blocked — validation fails closed pending authoritative IDL/account layout |
 | 1.2.5 `settle_offchain_round` | 1.1.3 | ✅ |
 | 1.2.6 `confirm_round` (finality delay) | 1.2.4/1.2.5 | ✅ |
 | 1.2.7 `claim_winnings` / refund | 1.1.4 | ✅ |
@@ -61,10 +61,10 @@ tags: [roadmap, phases, timeline]
 ### Settlement ★ Critical Path
 | Task | Depends | Status |
 |------|---------|--------|
-| 1.3.1 `settle_round` — CPI `validate_stat` | 1.1.3 | ✅ |
-| 1.3.2 Ternary logic (NextGoalSide) | 1.3.1 | ✅ |
-| 1.3.3 Binary logic (GoalInWindow, etc.) | 1.3.1 | ✅ |
-| 1.3.4 PenaltyShootoutShot (statKey 5001/5002) | 1.3.1 | ✅ |
+| 1.3.1 `settle_round` — CPI `validate_stat` | 1.1.3 | ⛔ Blocked — authoritative IDL/account layout required |
+| 1.3.2 Ternary logic (NextGoalSide) | 1.3.1 | ✅ Logic; ⛔ on-chain settlement blocked by 1.3.1 |
+| 1.3.3 Binary logic (GoalInWindow, etc.) | 1.3.1 | ✅ Logic; ⛔ on-chain settlement blocked by 1.3.1 |
+| 1.3.4 PenaltyShootoutShot (statKey 5001/5002) | 1.3.1 | ✅ Logic; ⛔ on-chain settlement blocked by 1.3.1 |
 | 1.3.5 `settle_offchain_round` | 1.1.3 | ✅ |
 | 1.3.6 `confirm_round` (finality delay) | 1.3.x | ✅ |
 | 1.3.7 `claim` (pro-rata + refund) | 1.1.4 | ✅ |
@@ -77,11 +77,11 @@ tags: [roadmap, phases, timeline]
 | 1.4.0 Native SOL test suite | 1.2.x | ✅ |
 |------|---------|--------|
 | 1.4.1 CPI spike test | 0.2 | ✅ (exists as `cpi-spike.ts`) |
-| 1.4.2 Core flow (init→match→open→bet→settle→claim) | 1.3.7 | ✅ |
-| 1.4.3 All market types | 1.3.x | ✅ (10 on-chain + off-chain) |
+| 1.4.2 Core flow (init→match→open→bet→settle→claim) | 1.3.7 | ✅ Off-chain/replay; ⛔ on-chain CPI path blocked |
+| 1.4.3 All market types | 1.3.x | ✅ Logic/replay coverage; ⛔ on-chain CPI settlement blocked |
 | 1.4.4 Edge cases (void, cancel, refund) | 1.3.x | ✅ |
 
-**MVP Gate:** All 8 market types settle correctly on devnet via manual transaction.
+**MVP Gate:** ⛔ Not met. Off-chain and replay settlement are verified; on-chain oracle markets remain fail-closed until the authoritative TxODDS IDL/account layout enables exact CPI validation.
 
 ---
 
@@ -113,7 +113,7 @@ tags: [roadmap, phases, timeline]
 | 2.3.4 `ws-server.ts` — WebSocket for frontend | ✅ |
 | 2.3.5 `index.ts` — main loop wiring | ✅ |
 
-**MVP Gate:** Relayer auto-opens and auto-settles rounds for a live match feed. ✅ (verified via replay harness — f58cd72)
+**MVP Gate:** Relayer auto-opens and replay-settles rounds for a live match feed. ✅ Replay harness verified at `f58cd72`; on-chain TxOracle CPI settlement remains pending until the required IDL and account layout are available.
 
 ---
 

@@ -1,6 +1,6 @@
 # KickTick: Sub-Minute Micro Prediction Markets on Solana
 
-Create and settle prediction markets in **under 60 seconds** using live TxODDS odds data + on-chain Merkle proof settlement via CPI to the `txoracle` program.
+Create prediction markets in **under 60 seconds** from live TxODDS odds data. Off-chain and replay settlement are implemented; the on-chain `txoracle::validate_stat` CPI path remains fail-closed until its authoritative account layout is integrated.
 
 **World Cup Hackathon** — Superteam × Solana, powered by TxODDS
 
@@ -184,7 +184,7 @@ Deployment info saved to `deployment-{network}.json`.
 
 ## Security
 
-- All settlements reference verifiable TxODDS Merkle data via CPI
+- On-chain oracle settlement fails closed until the authoritative TxODDS IDL and account layout are available and `txoracle::validate_stat` CPI validation is integrated; off-chain settlement uses the configured admin path
 - PDA-controlled vaults (no privileged withdrawal keys)
 - Strict duration + overflow checks on-chain
 - Equivocation challenge mechanism
