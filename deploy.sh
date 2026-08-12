@@ -1,67 +1,37 @@
-#!/bin/bash
-# KickTick Deploy Script — Post-Keygen
-# Run this AFTER: solana-keygen new -o ~/.config/solana/id.json
-# This script does NOT auto-execute. Copy-paste each line or run: bash deploy.sh
+#!/usr/bin/env bash
+set -euo pipefail
 
-set -e
+# KickTick devnet deployment — run when faucet has SOL
+# Usage: bash deploy.sh
 
-echo "=== KICKTICK DEPLOY ==="
+echo "=== KickTick Devnet Deploy ==="
 
-# Step 1: Verify keypair exists
-if [ ! -f ~/.config/solana/id.json ]; then
-    echo "ERROR: No keypair found. Run: solana-keygen new -o ~/.config/solana/id.json"
-    exit 1
+# Set devnet config
+solana config set --url devnet
+
+# Check balance
+BAL=$(solana balance)
+echo "Balance: $BAL"
+if [[ "$BAL" == "0 SOL" ]]; then
+  echo "ERROR: No SOL. Use faucet.solana.com (needs captcha) or wait for daily reset."
+  exit 1
 fi
 
-echo "Keypair found. Pubkey:"
-solana-keygen pubkey ~/.config/solana/id.json
+# Build with v3 arch
+echo "=== Building ==="
+SOL_R4="/Users/test/.local/share/solana/install/releases/stable-6a8c724a9ed8f093127ef6066e0bcfb074193cc3/solana-release"
+export PATH="$SOL_R4/bin:$HOME/.cargo/bin:$PATH"
+anchor build --arch v3
 
-# Step 2: Check balance (devnet)
-echo ""
-echo "Balance (devnet):"
-solana balance --url devnet
+# Sync keys
+echo "=== Syncing keys ==="
+anchor keys sync
 
-# Step 3: Airdrop if needed (devnet only, 2 SOL max per request)
-BALANCE=$(solana balance --url devnet | awk '{print $1}')
-if (( $(echo "$BALANCE < 0.5" | bc -l) )); then
-    echo ""
-    echo "Low balance. Requesting airdrop..."
-    solana airdrop 2 --url devnet
-    sleep 5
-    solana balance --url devnet
-fi
+# Deploy
+echo "=== Deploying ==="
+anchor deploy
 
-# Step 4: Build with matched toolchain
-echo ""
-echo "Building KickTick..."
-export PATH="$HOME/.local/share/solana/install/releases/stable-6a8c724a9ed8f093127ef6066e0bcfb074193cc3/solana-release/bin:$HOME/.cargo/bin:$PATH"
-cd /Users/test/projects/kicktick
-anchor build
-
-# Step 5: Verify artifacts
-if [ ! -f target/deploy/kicktick.so ]; then
-    echo "ERROR: Build failed. No .so file."
-    exit 1
-fi
-
-echo ""
-echo "Build verified:"
-ls -lh target/deploy/kicktick.so
-ls -lh target/idl/kicktick.json
-
-# Step 6: Deploy to devnet (USER STEP — this is the gated action)
-echo ""
-echo "=== DEPLOY COMMAND ==="
-echo "Run this to deploy to devnet:"
-echo ""
-echo "  cd /Users/test/projects/kicktick"
-echo "  export PATH=\"\$HOME/.local/share/solana/install/releases/stable-6a8c724a9ed8f093127ef6066e0bcfb074193cc3/solana-release/bin:\$HOME/.cargo/bin:\$PATH\""
-echo "  anchor deploy --provider.cluster devnet"
-echo ""
-echo "Or for mainnet (requires real SOL):"
-echo "  anchor deploy --provider.cluster mainnet"
-echo ""
+echo "=== Deployment complete ==="
 echo "Program ID: CCmcpUZttSJqUabxBcyvHp4uC89EkrXce5YSEvRgE7tc"
-echo "Deploy keypair: target/deploy/kicktick-keypair.json"
 echo ""
-echo "=== DONE ==="
+echo "Next: update frontend/relayer config with devnet RPC + program ID"
