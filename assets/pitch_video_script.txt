@@ -1,0 +1,32 @@
+
+PITCH VIDEO SCRIPT (1:45 - 2:00 minutes)
+Record with Loom, YouTube, or Vimeo. Speak naturally to camera. Use assets/pitch.gif or simple screen as background if needed. No fancy editing required.
+
+[0:00 - 0:15] Intro
+"Hi, I'm building KickTick — sub-minute micro prediction markets on Solana.
+
+I'm a developer focused on fast, on-chain applications. I've been deep in the Solana ecosystem for a while, shipping programs with Anchor and building tools that actually work in real conditions."
+
+[0:15 - 0:50] What you're building
+"What I'm building is simple but powerful: prediction markets that settle in under 60 seconds.
+
+Instead of waiting hours or days like traditional markets, KickTick lets you bet on price moves, events, or anything else — and get paid out almost instantly.
+
+It uses a relayer that pulls real data from oracles like TxODDS, combined with a custom Solana program for on-chain settlement. The whole flow is transparent, trustless, and built for speed."
+
+[0:50 - 1:20] How it works + why it matters
+"The stack is straightforward: React frontend for placing bets, a Node relayer that handles oracle data and transaction orchestration, and an Anchor program on Solana that manages matches, rounds, bets, and payouts.
+
+Why this matters: Most prediction markets today are slow. KickTick removes the friction. You can react to live events in real time, with settlement that feels instant. It's designed for high-frequency, low-stakes markets that current platforms can't handle well."
+
+[1:20 - 1:50] Why you're the person to build it
+"I'm the right person for this because I've spent time in Solana hackathons and production builds. I understand the pain points — latency, oracle reliability, and user experience on-chain.
+
+I built the relayer to be lightweight and the program to be minimal but complete. I tested the full flow end-to-end, including edge cases around settlement timing.
+
+This isn't just a prototype — it's something I want to keep iterating on because I genuinely believe fast, accessible prediction markets can change how people interact with information and risk."
+
+[1:50 - 2:00] Close
+"Check out the live demo and the code. I'm excited to hear what you think and keep pushing this forward.
+
+Thanks for watching."
