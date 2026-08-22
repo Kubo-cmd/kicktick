@@ -1,4 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { AdminAuthGuard } from '@/admin/AdminAuthGuard';
+import { WebSocketProvider } from '@/admin/WebSocketProvider';
 import AdminLayout from '@/admin/AdminLayout';
 import AdminDashboard from '@/admin/AdminDashboard';
 import AdminMatchDetail from '@/admin/AdminMatchDetail';
@@ -7,14 +9,18 @@ import AdminConfig from '@/admin/AdminConfig';
 
 export default function AdminPage() {
   return (
-    <Routes>
-      <Route element={<AdminLayout />}>
-        <Route index element={<Navigate to="/admin/dashboard" replace />} />
-        <Route path="dashboard" element={<AdminDashboard />} />
-        <Route path="matches/:fixtureId" element={<AdminMatchDetail />} />
-        <Route path="feed" element={<AdminFeedViewer />} />
-        <Route path="config" element={<AdminConfig />} />
-      </Route>
-    </Routes>
+    <AdminAuthGuard>
+      <WebSocketProvider>
+        <Routes>
+          <Route element={<AdminLayout />}>
+            <Route index element={<Navigate to="/admin/dashboard" replace />} />
+            <Route path="dashboard" element={<AdminDashboard />} />
+            <Route path="matches/:fixtureId" element={<AdminMatchDetail />} />
+            <Route path="feed" element={<AdminFeedViewer />} />
+            <Route path="config" element={<AdminConfig />} />
+          </Route>
+        </Routes>
+      </WebSocketProvider>
+    </AdminAuthGuard>
   );
 }

@@ -1,10 +1,19 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { WalletContextProvider } from '@/lib/WalletContext';
 import Header from '@/components/Header';
 import HomePage from '@/pages/HomePage';
-import AdminPage from '@/pages/AdminPage';
-import { AdminAuthGuard } from '@/admin/AdminAuthGuard';
-import { WebSocketProvider } from '@/admin/WebSocketProvider';
+
+// Admin surface is code-split: wallet-adapter + web3 deps load only for admins.
+const AdminPage = lazy(() => import('@/pages/AdminPage'));
+
+function AdminFallback() {
+  return (
+    <div className="flex items-center justify-center min-h-[50vh] text-sm opacity-60">
+      Loading admin…
+    </div>
+  );
+}
 
 export default function App() {
   return (
@@ -12,23 +21,17 @@ export default function App() {
       <WalletContextProvider>
         <div className="min-h-screen">
           <Header />
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/admin" element={
-              <AdminAuthGuard>
-                <WebSocketProvider>
-                  <AdminPage />
-                </WebSocketProvider>
-              </AdminAuthGuard>
-            } />
-            <Route path="/admin/*" element={
-              <AdminAuthGuard>
-                <WebSocketProvider>
-                  <AdminPage />
-                </WebSocketProvider>
-              </AdminAuthGuard>
-            } />
-          </Routes>
+          <Suspense fallback={<AdminFallback />}>
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/admin" element={
+                <AdminPage />
+              } />
+              <Route path="/admin/*" element={
+                <AdminPage />
+              } />
+            </Routes>
+          </Suspense>
         </div>
       </WalletContextProvider>
     </BrowserRouter>
