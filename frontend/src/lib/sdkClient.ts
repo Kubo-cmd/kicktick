@@ -3,7 +3,8 @@
 // Uses Web Crypto API (window.crypto.subtle) for Anchor discriminator hashes.
 
 import { Connection, PublicKey, TransactionInstruction, Transaction } from '@solana/web3.js';
-import type { SignerWalletAdapter } from '@solana/wallet-adapter-base';
+import type { SignerWalletAdapterProps } from '@solana/wallet-adapter-base';
+import type { TransactionSignature } from '@solana/web3.js';
 import { CONFIG } from './constants';
 
 const PROGRAM_ID = new PublicKey(CONFIG.kicktickProgramId);
@@ -131,14 +132,14 @@ async function buildOpenRound(
 export class KickTickClient {
   constructor(
     public connection: Connection,
-    public wallet: SignerWalletAdapter,
+    public wallet: SignerWalletAdapterProps,
   ) {}
 
   async initMatch(fixtureId: number, homeTeam: string, awayTeam: string): Promise<string> {
     if (!this.wallet.publicKey) throw new Error('Wallet not connected');
     const ix = await buildInitMatch(this.wallet.publicKey, fixtureId, homeTeam, awayTeam);
     const tx = new Transaction().add(ix);
-    const { signature } = await this.wallet.sendTransaction(tx, this.connection);
+    const signature: TransactionSignature = await this.wallet.sendTransaction(tx, this.connection);
     return signature;
   }
 
@@ -154,7 +155,7 @@ export class KickTickClient {
       this.wallet.publicKey, fixtureId, roundId, marketType, lockSeconds, deadlineSeconds
     );
     const tx = new Transaction().add(ix);
-    const { signature } = await this.wallet.sendTransaction(tx, this.connection);
+    const signature: TransactionSignature = await this.wallet.sendTransaction(tx, this.connection);
     return signature;
   }
 }
